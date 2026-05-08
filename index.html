@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Lucro Fácil v17.4 - WR Acessórios</title>
+    <title>Lucro Fácil v17.5 - WR Acessórios</title>
     <style>
         :root {
             --primary: #22c55e;
@@ -56,7 +56,10 @@
         .page.active { display: block; }
         
         .item-card { background: var(--card-bg); border-radius: 18px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .btn-action { background: #f1f5f9; border: none; padding: 10px; border-radius: 12px; cursor: pointer; }
+        .btn-action { background: #f1f5f9; border: none; padding: 10px; border-radius: 12px; cursor: pointer; margin-left: 5px; }
+
+        /* Estilo da Margem no Card */
+        .margin-badge { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; margin-top: 4px; }
 
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; padding: 10px 0 25px 0; z-index: 100; }
         .nav-item { background: none; border: none; color: #94a3b8; font-size: 10px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; }
@@ -71,18 +74,20 @@
 </head>
 <body>
 
+    <!-- MODAL PRODUTO -->
     <div id="modal" onclick="if(event.target==this) fecharModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 id="modal-title" style="margin-bottom:20px">Produto</h3>
             <input type="hidden" id="edit-index">
-            <input type="text" id="p-nome" placeholder="Nome">
+            <input type="text" id="p-nome" placeholder="Nome do Produto">
             <input type="number" id="p-custo" placeholder="Custo R$">
             <input type="number" id="p-venda" placeholder="Venda R$">
-            <input type="number" id="p-qtd" placeholder="Estoque">
+            <input type="number" id="p-qtd" placeholder="Quantidade em Estoque">
             <button class="btn-confirm" onclick="salvarProduto()">Salvar Produto</button>
         </div>
     </div>
 
+    <!-- HOME -->
     <div id="home" class="page active" style="padding:0">
         <div class="header-green">
             <p>Saldo em caixa 💰</p>
@@ -107,41 +112,45 @@
         </div>
     </div>
 
+    <!-- ESTOQUE -->
     <div id="produtos" class="page">
         <h2 style="margin-bottom:20px">Gerenciar Estoque</h2>
         <button class="btn-venda" style="background:var(--primary); color:white" onclick="abrirModal()">+ Novo Produto</button>
         <div id="lista-estoque"></div>
     </div>
 
+    <!-- VENDAS -->
     <div id="vendas-page" class="page">
         <h2 style="margin-bottom:20px">Histórico de Vendas</h2>
         <div id="lista-vendas"></div>
     </div>
 
+    <!-- FIADOS -->
     <div id="fiado" class="page">
         <h2 style="margin-bottom:20px">Fiados Pendentes</h2>
         <button class="btn-venda" style="background:var(--warning); color:white" onclick="novoFiado()">+ Registrar Fiado</button>
         <div id="lista-fiado"></div>
     </div>
 
+    <!-- GASTOS -->
     <div id="gastos-page" class="page">
         <h2 style="margin-bottom:20px">Gastos / Despesas</h2>
         <button class="btn-venda" style="background:var(--danger); color:white" onclick="novaDespesa()">+ Lançar Gasto</button>
         <div id="lista-desp"></div>
     </div>
 
+    <!-- AJUSTES -->
     <div id="config" class="page">
         <h2 style="margin-bottom:20px">Ajustes</h2>
         <button class="btn-confirm" style="background:#1e293b; margin-bottom:10px" onclick="exportarBackup()">Baixar Backup</button>
-        
         <label class="btn-confirm" style="background:#64748b; display:block; text-align:center; margin-bottom:10px">
             Importar Backup
             <input type="file" style="display:none" onchange="importarBackup(event)">
         </label>
-
         <button class="btn-confirm" style="background:var(--danger); margin-top:20px" onclick="reset()">Zerar Tudo</button>
     </div>
 
+    <!-- NAV -->
     <nav class="nav-bar">
         <button class="nav-item active" onclick="tab('home', this)"><svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Início</button>
         <button class="nav-item" onclick="tab('produtos', this)"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18M9 21V9"></path></svg>Estoque</button>
@@ -168,17 +177,34 @@
             const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             let fat = 0, custoTotal = 0, despesaTotal = 0;
             db.logs.forEach(l => { if(l.t === 'v') { fat += l.v; custoTotal += l.custo; } else { despesaTotal += l.v; } });
+            
             document.getElementById('bruto-home').innerText = fmt(fat);
             document.getElementById('desp-home').innerText = fmt(despesaTotal);
             document.getElementById('liq-home').innerText = fmt(fat - (custoTotal + despesaTotal));
             document.getElementById('v-count').innerText = db.logs.filter(l => l.t === 'v').length;
             document.getElementById('p-count').innerText = db.produtos.length;
 
+            // Renderiza Lista de Estoque com Margem
             const listEstoque = document.getElementById('lista-estoque');
             if(listEstoque) {
                 listEstoque.innerHTML = "";
                 db.produtos.forEach((p, i) => {
-                    listEstoque.innerHTML += `<div class="item-card"><div><b>${p.nome}</b><br><small>${p.qtd} un | Venda: ${fmt(p.venda)}</small></div><div><button class="btn-action" onclick="abrirModal(${i})">✏️</button><button class="btn-action" onclick="if(confirm('Remover?')){db.produtos.splice(${i},1);save();}">🗑️</button></div></div>`;
+                    // Cálculo da Margem
+                    const lucroValor = p.venda - p.custo;
+                    const margemPorcent = p.custo > 0 ? ((lucroValor / p.custo) * 100).toFixed(0) : 0;
+                    
+                    listEstoque.innerHTML += `
+                        <div class="item-card">
+                            <div>
+                                <b>${p.nome}</b><br>
+                                <small>${p.qtd} un | Venda: ${fmt(p.venda)}</small><br>
+                                <span class="margin-badge">Lucro: ${fmt(lucroValor)} (${margemPorcent}%)</span>
+                            </div>
+                            <div style="display:flex">
+                                <button class="btn-action" onclick="abrirModal(${i})">✏️</button>
+                                <button class="btn-action" onclick="if(confirm('Remover?')){db.produtos.splice(${i},1);save();}">🗑️</button>
+                            </div>
+                        </div>`;
                 });
             }
 
