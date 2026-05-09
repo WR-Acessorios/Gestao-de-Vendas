@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lucro Fácil - WR Acessórios</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Lucro Fácil v17.7 - WR Acessórios</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -20,7 +21,6 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text-main); padding-bottom: 110px; }
 
-        /* Estilo Cabeçalho Original */
         .header-green {
             background: #22c55e;
             padding: 40px 20px 60px 20px;
@@ -29,14 +29,11 @@
             color: white;
         }
         .header-green h1 { font-size: 32px; font-weight: 800; }
-        .filter-bar { display: flex; gap: 8px; margin-top: 15px; }
-        .filter-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 14px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-        .filter-btn.active { background: white; color: var(--primary); }
-
+        
         .container { padding: 0 15px; margin-top: -30px; }
 
-        .btn-venda-principal {
-            background: var(--card-bg); color: var(--primary); border: none; padding: 20px; border-radius: 20px;
+        .btn-venda {
+            background: var(--card-bg); color: var(--primary); border: none; padding: 18px; border-radius: 20px;
             width: 100%; font-size: 18px; font-weight: 800; box-shadow: 0 10px 20px rgba(0,0,0,0.05);
             margin-bottom: 15px; cursor: pointer; border: 1px solid var(--border);
         }
@@ -52,22 +49,6 @@
 
         .item-card { background: var(--card-bg); border-radius: 18px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 
-        /* NOVO: Modal de Seleção de Produto (Substitui o Prompt) */
-        #modal-selecao { 
-            display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
-            background:rgba(0,0,0,0.7); z-index:2000; flex-direction: column; justify-content: flex-end; 
-        }
-        .modal-venda-content { 
-            background: white; border-top-left-radius: 30px; border-top-right-radius: 30px; 
-            padding: 25px; max-height: 80vh; overflow-y: auto; 
-        }
-        .venda-item-btn { 
-            width: 100%; padding: 15px; background: #f8fafc; border: 1px solid var(--border); 
-            border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; 
-            align-items: center; text-align: left; font-size: 16px;
-        }
-
-        /* Barra de Navegação Original */
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; padding: 10px 0 25px 0; z-index: 100; }
         .nav-item { background: none; border: none; color: #94a3b8; font-size: 10px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; }
         .nav-item.active { color: var(--primary); }
@@ -79,140 +60,79 @@
 </head>
 <body>
 
-    <div id="modal-selecao" onclick="if(event.target==this) fecharVenda()">
-        <div class="modal-venda-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
-                <h3 id="titulo-venda-contexto">Selecionar Produto</h3>
-                <button onclick="fecharVenda()" style="background:none; border:none; font-size:28px; color:var(--text-sub)">&times;</button>
-            </div>
-            <input type="text" id="searchVenda" placeholder="🔍 Buscar produto..." onkeyup="renderSelecaoVenda()">
-            <div id="lista-selecao-venda"></div>
-        </div>
-    </div>
-
     <div id="home" class="page active">
         <div class="header-green">
-            <p>Lucro (Hoje) 💰</p>
+            <p>Resumo de Hoje 💰</p>
             <h1 id="liq-home">R$ 0,00</h1>
-            <div class="filter-bar">
-                <button class="filter-btn active" onclick="setPeriodo(1, this)">Hoje</button>
-                <button class="filter-btn" onclick="setPeriodo(7, this)">7 Dias</button>
-                <button class="filter-btn" onclick="setPeriodo(30, this)">30 Dias</button>
-            </div>
         </div>
         <div class="container">
-            <button class="btn-venda-principal" onclick="abrirSelecaoVenda('venda')">+ Realizar Venda</button>
-            
+            <button class="btn-venda" onclick="vendaRapida()">+ Realizar Venda</button>
             <div class="stats-grid">
-                <div class="stat-card"><span class="stat-label">Vendas Totais</span><span id="bruto-home" class="stat-value" style="color:var(--primary)">R$ 0,00</span></div>
+                <div class="stat-card"><span class="stat-label">Vendas</span><span id="bruto-home" class="stat-value" style="color:var(--primary)">R$ 0,00</span></div>
                 <div class="stat-card"><span class="stat-label">Gastos</span><span id="desp-home" class="stat-value" style="color:var(--danger)">R$ 0,00</span></div>
-            </div>
-
-            <div style="background:white; border-radius:20px; padding:15px; border:1px solid var(--border)">
-                <p class="stat-label" style="margin-bottom:10px">Desempenho</p>
-                <canvas id="vendasChart" height="150"></canvas>
             </div>
         </div>
     </div>
 
     <div id="produtos" class="page">
-        <h2>Gerenciar Estoque</h2>
+        <h2>Estoque</h2>
         <button class="btn-confirm" style="margin: 20px 0" onclick="novoProduto()">+ Novo Produto</button>
         <div id="lista-estoque"></div>
     </div>
 
     <div id="fiado" class="page">
-        <h2>Fiados Pendentes</h2>
-        <button class="btn-confirm" style="background:var(--warning); margin: 20px 0" onclick="abrirSelecaoVenda('fiado')">+ Registrar Fiado</button>
+        <h2>Fiados</h2>
+        <button class="btn-confirm" style="background:var(--warning); margin: 20px 0" onclick="novoFiado()">+ Novo Fiado</button>
         <div id="lista-fiado"></div>
+    </div>
+
+    <div id="config" class="page">
+        <h2>Ajustes</h2>
+        <button class="btn-confirm" style="background:#1e293b; margin-top:20px" onclick="exportarBackup()">Baixar Backup</button>
+        <label class="btn-confirm" style="background:#64748b; display:block; text-align:center; margin-top:10px">
+            Importar Backup
+            <input type="file" style="display:none" onchange="importarBackup(event)">
+        </label>
     </div>
 
     <nav class="nav-bar">
         <button class="nav-item active" onclick="tab('home', this)"><svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Início</button>
         <button class="nav-item" onclick="tab('produtos', this)"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18M9 21V9"></path></svg>Estoque</button>
         <button class="nav-item" onclick="tab('fiado', this)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>Fiados</button>
+        <button class="nav-item" onclick="tab('config', this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
     </nav>
 
     <script>
         let db = JSON.parse(localStorage.getItem('lucro_facil_v17')) || { produtos: [], logs: [], fiados: [] };
-        let periodoDias = 1; let myChart = null; let contextoVenda = 'venda';
 
         function save() { localStorage.setItem('lucro_facil_v17', JSON.stringify(db)); render(); }
 
-        /* LÓGICA DE SELEÇÃO VISUAL (SUBSTITUI O PROMPT) */
-        function abrirSelecaoVenda(tipo) {
-            if(db.produtos.length === 0) return alert("Adicione produtos no estoque primeiro!");
-            contextoVenda = tipo;
-            document.getElementById('titulo-venda-contexto').innerText = tipo === 'venda' ? 'Vender Produto' : 'Registrar Fiado';
-            document.getElementById('modal-selecao').style.display = 'flex';
-            document.getElementById('searchVenda').value = "";
-            renderSelecaoVenda();
-        }
-
-        function fecharVenda() { document.getElementById('modal-selecao').style.display = 'none'; }
-
-        function renderSelecaoVenda() {
-            const termo = document.getElementById('searchVenda').value.toLowerCase();
-            const lista = document.getElementById('lista-selecao-venda');
-            lista.innerHTML = "";
-            db.produtos.forEach((p, i) => {
-                if(p.nome.toLowerCase().includes(termo)) {
-                    lista.innerHTML += `
-                        <button class="venda-item-btn" onclick="executarAcao(${i})">
-                            <span><b>${p.nome}</b><br><small>Estoque: ${p.qtd}</small></span>
-                            <b style="color:var(--primary)">R$ ${p.venda.toFixed(2)}</b>
-                        </button>`;
-                }
-            });
-        }
-
-        function executarAcao(idx) {
-            let p = db.produtos[idx];
-            if(p.qtd <= 0) return alert("Sem estoque!");
-
-            if(contextoVenda === 'venda') {
-                p.qtd--;
-                db.logs.push({ t:'v', n: p.nome, v: p.venda, custo: p.custo, dataIso: new Date().toISOString() });
-                fecharVenda(); save();
-            } else {
-                let cliente = prompt("Nome do cliente:");
-                if(cliente) {
-                    p.qtd--;
-                    db.fiados.push({ cliente, item: p.nome, valor: p.venda, custo: p.custo });
-                    fecharVenda(); save();
-                }
-            }
-        }
-
-        /* FUNÇÕES DE RENDERIZAÇÃO ORIGINAIS */
         function render() {
             const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             let fat = 0, custoT = 0, despT = 0;
+            const hoje = new Date().toDateString();
+
             db.logs.forEach(l => {
-                if(l.t === 'v') { fat += l.v; custoT += l.custo; } else { despT += l.v; }
+                if(new Date(l.dataIso).toDateString() === hoje) {
+                    if(l.t === 'v') { fat += l.v; custoT += l.custo; } else { despT += l.v; }
+                }
             });
+
             document.getElementById('bruto-home').innerText = fmt(fat);
             document.getElementById('desp-home').innerText = fmt(despT);
             document.getElementById('liq-home').innerText = fmt(fat - (custoT + despT));
 
-            const listEst = document.getElementById('lista-estoque');
-            if(listEst) {
-                listEst.innerHTML = db.produtos.map((p, i) => `
-                    <div class="item-card">
-                        <div><b>${p.nome}</b><br><small>${p.qtd} un | Venda: ${fmt(p.venda)}</small></div>
-                        <button onclick="removerProduto(${i})" style="background:none; border:none;">🗑️</button>
-                    </div>`).join("");
-            }
+            document.getElementById('lista-estoque').innerHTML = db.produtos.map((p, i) => `
+                <div class="item-card">
+                    <div><b>${p.nome}</b><br><small>${p.qtd} un | Venda: ${fmt(p.venda)}</small></div>
+                    <button onclick="removerProduto(${i})" style="background:none; border:none;">🗑️</button>
+                </div>`).join("");
 
-            const listFi = document.getElementById('lista-fiado');
-            if(listFi) {
-                listFi.innerHTML = db.fiados.map((f, i) => `
-                    <div class="item-card">
-                        <div><b>${f.cliente}</b><br><small>${f.item} - ${fmt(f.valor)}</small></div>
-                        <button class="btn-confirm" style="width:auto; padding:10px" onclick="baixarFiado(${i})">PAGO</button>
-                    </div>`).join("");
-            }
-            updateChart();
+            document.getElementById('lista-fiado').innerHTML = db.fiados.map((f, i) => `
+                <div class="item-card">
+                    <div><b>${f.cliente}</b><br><small>${f.item}</small></div>
+                    <button class="btn-confirm" style="width:auto; padding:10px" onclick="baixarFiado(${i})">PAGO</button>
+                </div>`).join("");
         }
 
         function tab(id, btn) {
@@ -230,7 +150,30 @@
             if(nome && venda) { db.produtos.push({nome, custo, venda, qtd}); save(); }
         }
 
-        function removerProduto(i) { if(confirm("Remover?")) { db.produtos.splice(i,1); save(); } }
+        function vendaRapida() {
+            const m = "Escolha o produto:\n" + db.produtos.map((p, i) => i + " - " + p.nome).join("\n");
+            const i = prompt(m);
+            if(i !== null && db.produtos[i]) {
+                let p = db.produtos[i];
+                if(p.qtd <= 0) return alert("Sem estoque!");
+                p.qtd--;
+                db.logs.push({ t:'v', n: p.nome, v: p.venda, custo: p.custo, dataIso: new Date().toISOString() });
+                save();
+            }
+        }
+
+        function novoFiado() {
+            const n = prompt("Nome do cliente:");
+            const m = "Escolha o produto:\n" + db.produtos.map((p, i) => i + " - " + p.nome).join("\n");
+            const i = prompt(m);
+            if(n && i !== null && db.produtos[i]) {
+                let p = db.produtos[i];
+                if(p.qtd <= 0) return alert("Sem estoque!");
+                p.qtd--;
+                db.fiados.push({ cliente: n, item: p.nome, valor: p.venda, custo: p.custo });
+                save();
+            }
+        }
 
         function baixarFiado(i) {
             let f = db.fiados[i];
@@ -238,14 +181,17 @@
             db.fiados.splice(i,1); save();
         }
 
-        function updateChart() {
-            const ctx = document.getElementById('vendasChart'); if(!ctx) return;
-            if(myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: ['S','T','Q','Q','S','S','D'], datasets: [{ data: [10,25,15,30,45,35,50], borderColor: '#22c55e', tension: 0.4 }] },
-                options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
-            });
+        function removerProduto(i) { if(confirm("Remover?")) { db.produtos.splice(i,1); save(); } }
+
+        function exportarBackup() {
+            const blob = new Blob([JSON.stringify(db)], {type:"application/json"});
+            const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="backup_wr.json"; a.click();
+        }
+
+        function importarBackup(e) {
+            const reader = new FileReader();
+            reader.onload = (ev) => { try { db = JSON.parse(ev.target.result); save(); alert("Backup Importado!"); } catch(err){ alert("Erro!"); } };
+            reader.readAsText(e.target.files[0]);
         }
 
         render();
