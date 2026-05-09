@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Lucro Fácil v17.7 - WR Acessórios</title>
+    <!-- Chart.js para o Gráfico -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -16,6 +17,7 @@
             --border: #e2e8f0;
             --danger: #ef4444;
             --warning: #f59e0b;
+            --info: #3b82f6;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -27,132 +29,313 @@
             border-bottom-left-radius: 30px;
             border-bottom-right-radius: 30px;
             color: white;
+            text-align: left;
         }
         .header-green h1 { font-size: 32px; font-weight: 800; }
         
+        .filter-bar { display: flex; gap: 8px; margin-top: 15px; }
+        .filter-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .filter-btn.active { background: white; color: var(--primary); }
+
         .container { padding: 0 15px; margin-top: -30px; }
 
         .btn-venda {
             background: var(--card-bg); color: var(--primary); border: none; padding: 18px; border-radius: 20px;
             width: 100%; font-size: 18px; font-weight: 800; box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-            margin-bottom: 15px; cursor: pointer; border: 1px solid var(--border);
+            margin-bottom: 15px; cursor: pointer; display: block; text-align: center; border: 1px solid var(--border);
         }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .stat-card { background: var(--card-bg); padding: 15px; border-radius: 20px; border: 1px solid var(--border); }
-        .stat-label { font-size: 10px; color: var(--text-sub); font-weight: 700; text-transform: uppercase; }
-        .stat-value { font-size: 17px; font-weight: 800; margin-top: 5px; display: block; }
+        .stat-label { font-size: 11px; color: var(--text-sub); font-weight: 700; text-transform: uppercase; display: block; }
+        .stat-value { font-size: 18px; font-weight: 800; margin-top: 5px; display: block; }
 
-        .page { display: none; padding: 20px; }
-        .page.active { display: block; }
-        #home.page.active { padding: 0; }
+        .chart-container { background: white; border-radius: 20px; padding: 15px; border: 1px solid var(--border); margin-bottom: 20px; }
+
+        .search-box { width: 100%; padding: 12px 15px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 15px; font-size: 16px; outline: none; }
 
         .item-card { background: var(--card-bg); border-radius: 18px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .btn-action { background: #f1f5f9; border: none; padding: 10px; border-radius: 12px; cursor: pointer; margin-left: 5px; }
+        .margin-badge { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; margin-top: 4px; }
 
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; padding: 10px 0 25px 0; z-index: 100; }
         .nav-item { background: none; border: none; color: #94a3b8; font-size: 10px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; }
         .nav-item.active { color: var(--primary); }
         .nav-item svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; }
 
+        #modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: white; padding: 25px; border-radius: 25px; width: 100%; max-width: 400px; }
         input { width:100%; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 15px; font-size: 16px; }
-        .btn-confirm { background: var(--primary); color: white; border: none; width: 100%; padding: 16px; border-radius: 15px; font-weight: 700; cursor: pointer; }
+        .btn-confirm { background: var(--primary); color: white; border: none; width: 100%; padding: 16px; border-radius: 15px; font-weight: 700; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="home" class="page active">
+    <!-- MODAL PRODUTO -->
+    <div id="modal" onclick="if(event.target==this) fecharModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 id="modal-title" style="margin-bottom:20px">Produto</h3>
+            <input type="hidden" id="edit-index">
+            <input type="text" id="p-nome" placeholder="Nome do Produto">
+            <input type="number" id="p-custo" placeholder="Custo R$">
+            <input type="number" id="p-venda" placeholder="Venda R$">
+            <input type="number" id="p-qtd" placeholder="Quantidade em Estoque">
+            <button class="btn-confirm" onclick="salvarProduto()">Salvar Produto</button>
+        </div>
+    </div>
+
+    <!-- HOME -->
+    <div id="home" class="page active" style="padding:0">
         <div class="header-green">
-            <p>Resumo de Hoje 💰</p>
+            <p id="label-periodo">Lucro (Hoje) 💰</p>
             <h1 id="liq-home">R$ 0,00</h1>
+            <div class="filter-bar">
+                <button class="filter-btn active" onclick="setPeriodo(1, this)">Hoje</button>
+                <button class="filter-btn" onclick="setPeriodo(7, this)">7 Dias</button>
+                <button class="filter-btn" onclick="setPeriodo(30, this)">30 Dias</button>
+            </div>
         </div>
         <div class="container">
             <button class="btn-venda" onclick="vendaRapida()">+ Realizar Venda</button>
+            
+            <div class="chart-container">
+                <p class="stat-label" style="margin-bottom:10px">Vendas (Últimos 7 dias)</p>
+                <canvas id="vendasChart" height="150"></canvas>
+            </div>
+
             <div class="stats-grid">
-                <div class="stat-card"><span class="stat-label">Vendas</span><span id="bruto-home" class="stat-value" style="color:var(--primary)">R$ 0,00</span></div>
+                <div class="stat-card"><span class="stat-label">Vendas Totais</span><span id="bruto-home" class="stat-value" style="color:var(--primary)">R$ 0,00</span></div>
                 <div class="stat-card"><span class="stat-label">Gastos</span><span id="desp-home" class="stat-value" style="color:var(--danger)">R$ 0,00</span></div>
             </div>
         </div>
     </div>
 
+    <!-- ESTOQUE -->
     <div id="produtos" class="page">
-        <h2>Estoque</h2>
-        <button class="btn-confirm" style="margin: 20px 0" onclick="novoProduto()">+ Novo Produto</button>
+        <h2 style="margin-bottom:15px">Gerenciar Estoque</h2>
+        <input type="text" id="searchEstoque" class="search-box" placeholder="🔍 Buscar produto..." onkeyup="render()">
+        <button class="btn-venda" style="background:var(--primary); color:white" onclick="abrirModal()">+ Novo Produto</button>
         <div id="lista-estoque"></div>
     </div>
 
+    <!-- VENDAS -->
+    <div id="vendas-page" class="page">
+        <h2 style="margin-bottom:20px">Histórico de Vendas</h2>
+        <div id="lista-vendas"></div>
+    </div>
+
+    <!-- FIADOS -->
     <div id="fiado" class="page">
-        <h2>Fiados</h2>
-        <button class="btn-confirm" style="background:var(--warning); margin: 20px 0" onclick="novoFiado()">+ Novo Fiado</button>
+        <h2 style="margin-bottom:20px">Fiados Pendentes</h2>
+        <button class="btn-venda" style="background:var(--warning); color:white" onclick="novoFiado()">+ Registrar Fiado</button>
         <div id="lista-fiado"></div>
     </div>
 
+    <!-- GASTOS -->
+    <div id="gastos-page" class="page">
+        <h2 style="margin-bottom:20px">Gastos / Despesas</h2>
+        <div class="stats-grid" style="margin-bottom:15px">
+            <div class="stat-card" style="border-left: 5px solid var(--info)">
+                <span class="stat-label">Investimento (Estoque)</span>
+                <span id="invest-total" class="stat-value">R$ 0,00</span>
+            </div>
+            <div class="stat-card" style="border-left: 5px solid var(--primary)">
+                <span class="stat-label">Venda Total (Estoque)</span>
+                <span id="venda-estoque-total" class="stat-value" style="color:var(--primary)">R$ 0,00</span>
+            </div>
+        </div>
+        <button class="btn-venda" style="background:var(--danger); color:white" onclick="novaDespesa()">+ Lançar Gasto</button>
+        <div id="lista-desp"></div>
+    </div>
+
+    <!-- AJUSTES -->
     <div id="config" class="page">
-        <h2>Ajustes</h2>
-        <button class="btn-confirm" style="background:#1e293b; margin-top:20px" onclick="exportarBackup()">Baixar Backup</button>
-        <label class="btn-confirm" style="background:#64748b; display:block; text-align:center; margin-top:10px">
+        <h2 style="margin-bottom:20px">Ajustes</h2>
+        <button class="btn-confirm" style="background:#1e293b; margin-bottom:10px" onclick="exportarBackup()">Baixar Backup</button>
+        <label class="btn-confirm" style="background:#64748b; display:block; text-align:center; margin-bottom:10px">
             Importar Backup
             <input type="file" style="display:none" onchange="importarBackup(event)">
         </label>
+        <button class="btn-confirm" style="background:var(--danger); margin-top:20px" onclick="reset()">Zerar Tudo</button>
     </div>
 
+    <!-- NAV -->
     <nav class="nav-bar">
         <button class="nav-item active" onclick="tab('home', this)"><svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>Início</button>
         <button class="nav-item" onclick="tab('produtos', this)"><svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18M9 21V9"></path></svg>Estoque</button>
+        <button class="nav-item" onclick="tab('vendas-page', this)"><svg viewBox="0 0 24 24"><path d="M12 20v-6M6 20V10M18 20V4"></path></svg>Vendas</button>
         <button class="nav-item" onclick="tab('fiado', this)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>Fiados</button>
-        <button class="nav-item" onclick="tab('config', this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
+        <button class="nav-item" onclick="tab('gastos-page', this)"><svg viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>Gastos</button>
+        <button class="nav-item" onclick="tab('config', this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Ajustes</button>
     </nav>
 
     <script>
         let db = JSON.parse(localStorage.getItem('lucro_facil_v17')) || { produtos: [], logs: [], fiados: [] };
-
-        function save() { localStorage.setItem('lucro_facil_v17', JSON.stringify(db)); render(); }
-
-        function render() {
-            const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            let fat = 0, custoT = 0, despT = 0;
-            const hoje = new Date().toDateString();
-
-            db.logs.forEach(l => {
-                if(new Date(l.dataIso).toDateString() === hoje) {
-                    if(l.t === 'v') { fat += l.v; custoT += l.custo; } else { despT += l.v; }
-                }
-            });
-
-            document.getElementById('bruto-home').innerText = fmt(fat);
-            document.getElementById('desp-home').innerText = fmt(despT);
-            document.getElementById('liq-home').innerText = fmt(fat - (custoT + despT));
-
-            document.getElementById('lista-estoque').innerHTML = db.produtos.map((p, i) => `
-                <div class="item-card">
-                    <div><b>${p.nome}</b><br><small>${p.qtd} un | Venda: ${fmt(p.venda)}</small></div>
-                    <button onclick="removerProduto(${i})" style="background:none; border:none;">🗑️</button>
-                </div>`).join("");
-
-            document.getElementById('lista-fiado').innerHTML = db.fiados.map((f, i) => `
-                <div class="item-card">
-                    <div><b>${f.cliente}</b><br><small>${f.item}</small></div>
-                    <button class="btn-confirm" style="width:auto; padding:10px" onclick="baixarFiado(${i})">PAGO</button>
-                </div>`).join("");
-        }
+        let periodoDias = 1; 
+        let myChart = null;
 
         function tab(id, btn) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            render();
         }
 
-        function novoProduto() {
-            const nome = prompt("Nome:");
-            const custo = parseFloat(prompt("Custo R$:"));
-            const venda = parseFloat(prompt("Venda R$:"));
-            const qtd = parseInt(prompt("Qtd:"));
-            if(nome && venda) { db.produtos.push({nome, custo, venda, qtd}); save(); }
+        function setPeriodo(dias, btn) {
+            periodoDias = dias;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const labels = { 1: 'Hoje', 7: '7 Dias', 30: '30 Dias' };
+            document.getElementById('label-periodo').innerText = `Lucro (${labels[dias]}) 💰`;
+            render();
+        }
+
+        function save() { localStorage.setItem('lucro_facil_v17', JSON.stringify(db)); render(); }
+
+        function render() {
+            const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const agora = new Date();
+            
+            // Lógica de Filtro por Período
+            let fat = 0, custoTotal = 0, despesaTotal = 0;
+            db.logs.forEach(l => {
+                const dataLog = new Date(l.dataIso);
+                const diff = (agora - dataLog) / (1000 * 60 * 60 * 24);
+                
+                if (diff <= periodoDias) {
+                    if(l.t === 'v') { 
+                        fat += l.v; 
+                        custoTotal += l.custo; 
+                    } else { 
+                        despesaTotal += l.v; 
+                    }
+                }
+            });
+            
+            document.getElementById('bruto-home').innerText = fmt(fat);
+            document.getElementById('desp-home').innerText = fmt(despesaTotal);
+            document.getElementById('liq-home').innerText = fmt(fat - (custoTotal + despesaTotal));
+
+            // Renderiza Estoque com Busca
+            const termoBusca = document.getElementById('searchEstoque')?.value.toLowerCase() || "";
+            const listEstoque = document.getElementById('lista-estoque');
+            if(listEstoque) {
+                listEstoque.innerHTML = "";
+                db.produtos.forEach((p, i) => {
+                    if (p.nome.toLowerCase().includes(termoBusca)) {
+                        const lucroValor = p.venda - p.custo;
+                        const margemPorcent = p.custo > 0 ? ((lucroValor / p.custo) * 100).toFixed(0) : 0;
+                        listEstoque.innerHTML += `<div class="item-card"><div><b>${p.nome}</b><br><small>${p.qtd} un | Venda: ${fmt(p.venda)}</small><br><span class="margin-badge">Lucro: ${fmt(lucroValor)} (${margemPorcent}%)</span></div><div style="display:flex"><button class="btn-action" onclick="abrirModal(${i})">✏️</button><button class="btn-action" onclick="if(confirm('Remover?')){db.produtos.splice(${i},1);save();}">🗑️</button></div></div>`;
+                    }
+                });
+            }
+
+            // Gastos - Investimento Total
+            let somaCustoEstoque = 0, somaVendaEstoque = 0;
+            db.produtos.forEach(p => { somaCustoEstoque += (p.custo * p.qtd); somaVendaEstoque += (p.venda * p.qtd); });
+            if(document.getElementById('invest-total')) {
+                document.getElementById('invest-total').innerText = fmt(somaCustoEstoque);
+                document.getElementById('venda-estoque-total').innerText = fmt(somaVendaEstoque);
+            }
+
+            updateChart();
+            renderListasSecundarias(fmt);
+        }
+
+        function renderListasSecundarias(fmt) {
+            const listFiado = document.getElementById('lista-fiado');
+            if(listFiado) {
+                listFiado.innerHTML = "";
+                db.fiados.forEach((f, i) => {
+                    listFiado.innerHTML += `<div class="item-card"><div><b>${f.cliente}</b><br><small>Item: ${f.item} | ${f.dataPagto}</small></div><div style="text-align:right"><b>${fmt(f.valor)}</b><br><button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px" onclick="baixarFiado(${i})">PAGO</button></div></div>`;
+                });
+            }
+            const listVendas = document.getElementById('lista-vendas');
+            if(listVendas) {
+                listVendas.innerHTML = db.logs.filter(l => l.t === 'v').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small>${new Date(l.dataIso).toLocaleDateString()}</small></div><b style="color:var(--primary)">+ ${fmt(l.v)}</b></div>`).join("");
+            }
+            const listDesp = document.getElementById('lista-desp');
+            if(listDesp) {
+                listDesp.innerHTML = db.logs.filter(l => l.t === 'd').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small>${new Date(l.dataIso).toLocaleDateString()}</small></div><b style="color:var(--danger)">- ${fmt(l.v)}</b></div>`).join("");
+            }
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('vendasChart');
+            if(!ctx) return;
+            
+            const diasArr = [];
+            const valoresArr = [];
+            for(let i=6; i>=0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                const diaStr = d.toLocaleDateString('pt-BR', {weekday: 'short'}).replace('.','');
+                diasArr.push(diaStr);
+                
+                const totalDia = db.logs.filter(l => l.t === 'v' && new Date(l.dataIso).toDateString() === d.toDateString())
+                                      .reduce((acc, curr) => acc + curr.v, 0);
+                valoresArr.push(totalDia);
+            }
+
+            if(myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: diasArr,
+                    datasets: [{
+                        label: 'Vendas (R$)',
+                        data: valoresArr,
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, display: false }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        // Funções de Negócio mantidas
+        function abrirModal(index = -1) {
+            const editIndex = document.getElementById('edit-index');
+            if(index > -1) {
+                const p = db.produtos[index];
+                document.getElementById('p-nome').value = p.nome;
+                document.getElementById('p-custo').value = p.custo;
+                document.getElementById('p-venda').value = p.venda;
+                document.getElementById('p-qtd').value = p.qtd;
+                editIndex.value = index;
+            } else {
+                editIndex.value = -1;
+                document.querySelectorAll('#modal input').forEach(i => i.value = "");
+            }
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function fecharModal() { document.getElementById('modal').style.display = 'none'; }
+
+        function salvarProduto() {
+            const idx = parseInt(document.getElementById('edit-index').value);
+            const p = {
+                nome: document.getElementById('p-nome').value,
+                custo: parseFloat(document.getElementById('p-custo').value) || 0,
+                venda: parseFloat(document.getElementById('p-venda').value) || 0,
+                qtd: parseInt(document.getElementById('p-qtd').value) || 0
+            };
+            if(idx > -1) db.produtos[idx] = p; else db.produtos.push(p);
+            save(); fecharModal();
         }
 
         function vendaRapida() {
-            const m = "Escolha o produto:\n" + db.produtos.map((p, i) => i + " - " + p.nome).join("\n");
-            const i = prompt(m);
+            if(!db.produtos.length) return alert("Cadastre produtos primeiro!");
+            let m = "Escolha o produto pelo número:\n" + db.produtos.map((p, i) => `${i} - ${p.nome}`).join("\n");
+            let i = prompt(m);
             if(i !== null && db.produtos[i]) {
                 let p = db.produtos[i];
                 if(p.qtd <= 0) return alert("Sem estoque!");
@@ -163,36 +346,53 @@
         }
 
         function novoFiado() {
+            if(!db.produtos.length) return alert("Cadastre produtos no estoque primeiro!");
             const n = prompt("Nome do cliente:");
-            const m = "Escolha o produto:\n" + db.produtos.map((p, i) => i + " - " + p.nome).join("\n");
-            const i = prompt(m);
-            if(n && i !== null && db.produtos[i]) {
+            if(!n) return;
+            let m = "Escolha o produto que o cliente está levando:\n" + db.produtos.map((p, i) => `${i} - ${p.nome} (${p.qtd} un)`).join("\n");
+            let i = prompt(m);
+            if(i !== null && db.produtos[i]) {
                 let p = db.produtos[i];
-                if(p.qtd <= 0) return alert("Sem estoque!");
+                if(p.qtd <= 0) return alert("Sem estoque deste produto!");
+                const d = prompt("Data prometida para pagar (ex: 05/05):");
                 p.qtd--;
-                db.fiados.push({ cliente: n, item: p.nome, valor: p.venda, custo: p.custo });
-                save();
+                db.fiados.push({ cliente: n, item: p.nome, valor: p.venda, custo: p.custo, dataPagto: d || "Não informada" }); 
+                save(); 
+                alert("Fiado registrado!");
             }
         }
 
         function baixarFiado(i) {
-            let f = db.fiados[i];
-            db.logs.push({ t:'v', n: "Fiado: "+f.cliente, v: f.valor, custo: f.custo, dataIso: new Date().toISOString() });
-            db.fiados.splice(i,1); save();
+            const f = db.fiados[i];
+            db.logs.push({ t:'v', n: 'Fiado Pago: ' + f.cliente, v: f.valor, custo: f.custo, dataIso: new Date().toISOString() });
+            db.fiados.splice(i, 1);
+            save();
         }
 
-        function removerProduto(i) { if(confirm("Remover?")) { db.produtos.splice(i,1); save(); } }
+        function novaDespesa() {
+            const n = prompt("Descrição do gasto:");
+            const v = parseFloat(prompt("Valor R$:")?.replace(',','.'));
+            if(n && v) { db.logs.push({ t:'d', n: n, v: v, dataIso: new Date().toISOString() }); save(); }
+        }
 
         function exportarBackup() {
-            const blob = new Blob([JSON.stringify(db)], {type:"application/json"});
-            const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="backup_wr.json"; a.click();
+            const blob = new Blob([JSON.stringify(db)], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "backup_wr.json";
+            a.click();
         }
 
         function importarBackup(e) {
             const reader = new FileReader();
-            reader.onload = (ev) => { try { db = JSON.parse(ev.target.result); save(); alert("Backup Importado!"); } catch(err){ alert("Erro!"); } };
+            reader.onload = (ev) => { 
+                try { db = JSON.parse(ev.target.result); save(); alert("Sucesso!"); } 
+                catch(err){ alert("Erro no arquivo."); } 
+            };
             reader.readAsText(e.target.files[0]);
         }
+
+        function reset() { if(confirm("Apagar TUDO?")) { db = { produtos: [], logs: [], fiados: [] }; save(); } }
 
         render();
     </script>
