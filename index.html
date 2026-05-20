@@ -200,7 +200,6 @@
 
         function save() { localStorage.setItem('lucro_facil_v21', JSON.stringify(db)); render(); }
 
-        // Mover produtos de posição
         function moverProduto(index, direcao) {
             const novoIndex = index + direcao;
             if (novoIndex >= 0 && novoIndex < db.produtos.length) {
@@ -265,7 +264,20 @@
 
             const listFiado = document.getElementById('lista-fiado');
             if(listFiado) {
-                listFiado.innerHTML = db.fiados.map((f, i) => `<div class="item-card"><div><b>${f.cliente}</b><br><small>Item: ${f.item}</small></div><div style="text-align:right"><b>${fmt(f.valor)}</b><br><button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px" onclick="gerarRecibo('${f.cliente}', '${f.item}', ${f.valor})">WhatsApp</button><button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--primary)" onclick="baixarFiado(${i})">PAGO</button></div></div>`).join("");
+                listFiado.innerHTML = db.fiados.map((f, i) => {
+                    const dataExibicao = f.dataPrometida ? `<br><small style="color:var(--warning); font-weight:700;">📅 Pagar em: ${f.dataPrometida}</small>` : '';
+                    return `<div class="item-card">
+                        <div>
+                            <b>${f.cliente}</b>${dataExibicao}<br>
+                            <small>Item: ${f.item}</small>
+                        </div>
+                        <div style="text-align:right">
+                            <b>${fmt(f.valor)}</b><br>
+                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--info)" onclick="cobrarFiado('${f.cliente}', '${f.item}', ${f.valor}, '${f.dataPrometida || ''}')">WhatsApp</button>
+                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--primary)" onclick="baixarFiado(${i})">PAGO</button>
+                        </div>
+                    </div>`;
+                }).join("");
             }
 
             const listVendas = document.getElementById('lista-vendas');
@@ -322,10 +334,11 @@
             } else {
                 const n = prompt("Nome do cliente:");
                 if(!n) return;
+                const dataP = prompt("Data combinada para pagamento? (Ex: 10/06, Sexta-feira. Se não quiser colocar, deixe em branco):");
                 p.qtd--;
-                db.fiados.push({ cliente: n, item: p.nome, valor: p.venda, custo: p.custo, dataPagto: 'Pend' });
+                db.fiados.push({ cliente: n, item: p.nome, valor: p.venda, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '' });
                 save(); fecharModalVenda();
-                if(confirm("Fiado registrado! Enviar aviso ao cliente?")) gerarRecibo(n, p.nome, p.venda, true);
+                if(confirm("Fiado registrado! Enviar mensagem de cobrança ao cliente agora?")) cobrarFiado(n, p.nome, p.venda, dataP || '');
             }
         }
 
@@ -353,9 +366,17 @@
             }
         }
 
-        function gerarRecibo(cliente, item, valor, isFiado = false) {
-            const saudacao = isFiado ? "Aviso de Fiado" : "Recibo de Compra";
-            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*${saudacao}*%0A%0AOlá, ${cliente}!%0AItem: ${item}%0AValor: R$ ${valor.toFixed(2)}%0A---%0A_Obrigado pela preferência!_`;
+        function gerarRecibo(cliente, item, valor) {
+            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: ${item}%0AValor: R$ ${valor.toFixed(2)}%0A---%0A_Obrigado pela preferência!_`;
+            window.open(`https://wa.me/?text=${msg}`, '_blank');
+        }
+
+        function cobrarFiado(cliente, item, valor, dataPrometida) {
+            const chavePix = prompt("Insira sua chave Pix para enviar na mensagem:");
+            if(chavePix === null) return; // Se o usuário cancelar, interrompe
+            
+            let dataTexto = dataPrometida ? ` combinada para o dia *${dataPrometida}*` : '';
+            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Lembrete de Pagamento*%0A%0AOlá, ${cliente}! Passando para lembrar do seu pedido:%0A%0A📦 *Item:* ${item}%0A💰 *Valor:* R$ ${valor.toFixed(2)}${dataTexto}%0A%0ASe quiser adiantar, você pode efetuar o pagamento via Pix pela chave abaixo:%0A🔑 *Pix:* ${chavePix}%0A%0A_Qualquer dúvida, estou à disposição!_`;
             window.open(`https://wa.me/?text=${msg}`, '_blank');
         }
 
