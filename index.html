@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Gestão de Vendas v2.6 - WR Acessórios</title>
+    <title>Gestão de Vendas v2.7 - WR Acessórios</title>
     <style>
         :root {
             --primary: #22c55e;
@@ -16,6 +16,7 @@
             --danger: #ef4444;
             --warning: #f59e0b;
             --info: #3b82f6;
+            --purple: #8b5cf6;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -65,14 +66,14 @@
         .rank-badge { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; margin-bottom: 5px; display: inline-block; }
 
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; padding: 10px 0 25px 0; z-index: 100; }
-        .nav-item { background: none; border: none; color: #94a3b8; font-size: 10px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; }
+        .nav-item { background: none; border: none; color: #94a3b8; font-size: 9px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; }
         .nav-item.active { color: var(--primary); }
-        .nav-item svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.5; }
+        .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; }
 
         #modal, #modal-venda { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: white; padding: 25px; border-radius: 25px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
         
-        input { width:100%; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 15px; font-size: 16px; }
+        input, select { width:100%; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 15px; font-size: 16px; }
         .btn-confirm { background: var(--primary); color: white; border: none; width: 100%; padding: 16px; border-radius: 15px; font-weight: 700; font-size: 16px; cursor: pointer; }
 
         .venda-item-option {
@@ -82,6 +83,12 @@
         }
 
         .ranking-container { background: #fff; border-radius: 20px; padding: 15px; border: 1px solid var(--border); margin-top: 10px; }
+        
+        /* Estilos do Relatório */
+        .report-select-container { background: white; padding: 15px; border-radius: 18px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .report-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .report-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
+        .report-row:last-child { border-bottom: none; font-weight: bold; font-size: 16px; padding-top: 15px; }
     </style>
 </head>
 <body>
@@ -112,7 +119,7 @@
 
     <div id="home" class="page active" style="padding:0">
         <div class="header-green">
-            <span class="version-badge">v2.6</span>
+            <span class="version-badge">v2.7</span>
             <p>Saldo em caixa 💰</p>
             <h1 id="liq-home">R$ 0,00</h1>
             <div class="status-pill"><div class="dot"></div> WR Acessórios Ativa</div>
@@ -166,6 +173,42 @@
         <div id="lista-desp"></div>
     </div>
 
+    <div id="relatorios-page" class="page">
+        <h2 style="margin-bottom:20px">Relatório Mensal</h2>
+        <div class="report-select-container">
+            <label style="font-size: 12px; font-weight: bold; color: var(--text-sub); display: block; margin-bottom: 5px;">Selecione o Mês:</label>
+            <select id="select-mes-filtro" onchange="renderRelatorio()" style="margin-bottom: 0;"></select>
+        </div>
+        
+        <div class="report-card">
+            <h3 style="margin-bottom: 15px; font-size: 16px; color: var(--purple);">📊 Resumo do Período</h3>
+            <div class="report-row">
+                <span>📥 Mercadoria Entrou (Custo Total):</span>
+                <span id="rep-entrada" style="color: var(--info);">R$ 0,00</span>
+            </div>
+            <div class="report-row">
+                <span>📦 Mercadorias Saíram (Qtd):</span>
+                <span id="rep-saida-qtd">0 un</span>
+            </div>
+            <div class="report-row">
+                <span>🛒 Vendas Realizadas:</span>
+                <span id="rep-vendas-qtd">0</span>
+            </div>
+            <div class="report-row">
+                <span>💰 Faturamento Total Bruto:</span>
+                <span id="rep-faturamento" style="color: var(--primary);">R$ 0,00</span>
+            </div>
+            <div class="report-row">
+                <span>📉 Gastos Extras / Despesas:</span>
+                <span id="rep-gastos" style="color: var(--danger);">R$ 0,00</span>
+            </div>
+            <div class="report-row" style="background: #f8fafc; padding: 15px 10px; border-radius: 10px; margin-top: 10px;">
+                <span>📈 Lucro Líquido Real:</span>
+                <span id="rep-lucro">R$ 0,00</span>
+            </div>
+        </div>
+    </div>
+
     <div id="config" class="page">
         <h2 style="margin-bottom:20px">Configurações</h2>
         <button class="btn-confirm" style="background:#1e293b; margin-bottom:10px" onclick="exportarBackup()">Baixar Backup</button>
@@ -183,6 +226,7 @@
         <button class="nav-item" onclick="tab('vendas-page', this)"><svg viewBox="0 0 24 24"><path d="M12 20v-6M6 20V10M18 20V4"></path></svg>Vendas</button>
         <button class="nav-item" onclick="tab('fiado', this)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>Fiados</button>
         <button class="nav-item" onclick="tab('gastos-page', this)"><svg viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"></rect><line x1="2" x2="22" y1="10" y2="10"></line></svg>Gastos</button>
+        <button class="nav-item" onclick="tab('relatorios-page', this)"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>Relatório</button>
         <button class="nav-item" onclick="tab('config', this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>Ajustes</button>
     </nav>
 
@@ -190,11 +234,22 @@
         let db = JSON.parse(localStorage.getItem('lucro_facil_v21')) || { produtos: [], logs: [], fiados: [] };
         let contextoVenda = 'venda';
 
+        // Garantir que todos os registros antigos tenham um campo de dataIso válido
+        db.logs.forEach(l => { if(!l.dataIso) l.dataIso = new Date(); });
+        if(db.fiados_pagos) { 
+            // Migrar fiados pagos legados caso existam para a tabela de logs padrão
+            db.fiados_pagos.forEach(fp => {
+                db.logs.push({ t: 'v', n: 'Fiado Pago: ' + fp.cliente, v: fp.valor, custo: fp.custo || 0, dataIso: fp.dataIso || new Date() });
+            });
+            delete db.fiados_pagos;
+        }
+
         function tab(id, btn) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            if (id === 'relatorios-page') carregarFiltrosRelatorio();
             render();
         }
 
@@ -208,6 +263,88 @@
                 db.produtos[novoIndex] = temp;
                 save();
             }
+        }
+
+        function carregarFiltrosRelatorio() {
+            const select = document.getElementById('select-mes-filtro');
+            if(!select) return;
+            
+            const mesesAnos = new Set();
+            // Pegar meses dos logs
+            db.logs.forEach(l => {
+                const d = new Date(l.dataIso);
+                mesesAnos.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`);
+            });
+            
+            // Se estiver vazio, adiciona o mês corrente
+            if(mesesAnos.size === 0) {
+                const d = new Date();
+                mesesAnos.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`);
+            }
+            
+            const listaOrdenada = Array.from(mesesAnos).sort().reverse();
+            const mesSelecionadoAntes = select.value;
+            
+            select.innerHTML = listaOrdenada.map(ma => {
+                const [ano, mes] = ma.split('-');
+                const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                return `<option value="${ma}">${nomesMeses[parseInt(mes)-1]} / ${ano}</option>`;
+            }).join('');
+            
+            if(mesSelecionadoAntes && listaOrdenada.includes(mesSelecionadoAntes)) {
+                select.value = mesSelecionadoAntes;
+            }
+        }
+
+        function renderRelatorio() {
+            const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const filtro = document.getElementById('select-mes-filtro').value;
+            if(!filtro) return;
+            
+            const [anoFiltro, mesFiltro] = filtro.split('-');
+            
+            let entradaMercadoria = 0;
+            let mercadoriasSairamQtd = 0;
+            let vendasQtd = 0;
+            let faturamentoBruto = 0;
+            let gastosExtras = 0;
+            let custoDasMercadoriasVendidas = 0;
+
+            db.logs.forEach(l => {
+                const d = new Date(l.dataIso);
+                const matchesMes = (d.getFullYear() == anoFiltro && (d.getMonth() + 1) == parseInt(mesFiltro));
+                
+                if(matchesMes) {
+                    if(l.t === 'v') {
+                        vendasQtd++;
+                        faturamentoBruto += l.v;
+                        custoDasMercadoriasVendidas += (l.custo || 0);
+                        mercadoriasSairamQtd++;
+                    }
+                    if(l.t === 'd') {
+                        // Se for investimento de estoque de reposição
+                        if(l.n.startsWith('Invest. Estoque:')) {
+                            entradaMercadoria += l.v;
+                        } else {
+                            // Gastos gerais (Almoço, frete, passagens)
+                            gastosExtras += l.v;
+                        }
+                    }
+                }
+            });
+
+            // Lucro Líquido Real = Faturamento Bruto - Custo do que foi de fato vendido - Gastos Extras/Fretes
+            let lucroLiquido = faturamentoBruto - custoDasMercadoriasVendidas - gastosExtras;
+
+            document.getElementById('rep-entrada').innerText = fmt(entradaMercadoria);
+            document.getElementById('rep-saida-qtd').innerText = mercadoriasSairamQtd + " un";
+            document.getElementById('rep-vendas-qtd').innerText = vendasQtd;
+            document.getElementById('rep-faturamento').innerText = fmt(faturamentoBruto);
+            document.getElementById('rep-gastos').innerText = fmt(gastosExtras);
+            
+            const txtLucro = document.getElementById('rep-lucro');
+            txtLucro.innerText = fmt(lucroLiquido);
+            txtLucro.style.color = lucroLiquido >= 0 ? 'var(--primary)' : 'var(--danger)';
         }
 
         function render() {
@@ -291,6 +428,10 @@
                 listDesp.innerHTML = db.logs.map((l, i) => ({...l, originalIdx: i}))
                     .filter(l => l.t === 'd').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small>${new Date(l.dataIso).toLocaleDateString()}</small></div><div style="text-align:right"><b style="color:var(--danger)">- ${fmt(l.v)}</b><br><button onclick="removerLog(${l.originalIdx})" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Remover</button></div></div>`).join("");
             }
+
+            if (document.getElementById('relatorios-page').classList.contains('active')) {
+                renderRelatorio();
+            }
         }
 
         function abrirSelecaoVisual(tipo) {
@@ -336,7 +477,7 @@
                 if(!n) return;
                 const dataP = prompt("Data combinada para pagamento? (Ex: 10/06, Sexta-feira. Se não quiser colocar, deixe em branco):");
                 p.qtd--;
-                db.fiados.push({ cliente: n, item: p.nome, valor: p.venda, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '' });
+                db.fiados.push({ cliente: n, item: p.nome, valor: p.venda, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '', dataIso: new Date() });
                 save(); fecharModalVenda();
                 if(confirm("Fiado registrado! Enviar mensagem de cobrança ao cliente agora?")) cobrarFiado(n, p.nome, p.venda, dataP || '');
             }
@@ -373,7 +514,7 @@
 
         function cobrarFiado(cliente, item, valor, dataPrometida) {
             const chavePix = prompt("Insira sua chave Pix para enviar na mensagem:");
-            if(chavePix === null) return; // Se o usuário cancelar, interrompe
+            if(chavePix === null) return; 
             
             let dataTexto = dataPrometida ? ` combinada para o dia *${dataPrometida}*` : '';
             const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Lembrete de Pagamento*%0A%0AOlá, ${cliente}! Passando para lembrar do seu pedido:%0A%0A📦 *Item:* ${item}%0A💰 *Valor:* R$ ${valor.toFixed(2)}${dataTexto}%0A%0ASe quiser adiantar, você pode efetuar o pagamento via Pix pela chave abaixo:%0A🔑 *Pix:* ${chavePix}%0A%0A_Qualquer dúvida, estou à disposição!_`;
@@ -440,7 +581,7 @@
             const blob = new Blob([JSON.stringify(db)], { type: "application/json" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = "backup_wr_v26.json"; a.click();
+            a.download = "backup_wr_v27.json"; a.click();
         }
 
         function importarBackup(e) {
