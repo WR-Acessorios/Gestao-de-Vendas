@@ -71,7 +71,7 @@
         .nav-item.active { color: var(--primary); }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; }
 
-        #modal, #modal-venda { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items: center; justify-content: center; padding: 20px; }
+        #modal, #modal-venda, #modal-pagamento { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: white; padding: 25px; border-radius: 25px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
         
         input, select { width:100%; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 15px; font-size: 16px; }
@@ -82,6 +82,25 @@
             border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between;
             align-items: center; text-align: left; cursor: pointer;
         }
+
+        /* Estilos Novos para Botões de Pagamento */
+        .payment-option-btn {
+            width: 100%; padding: 18px; background: #f8fafc; border: 2px solid #f1f5f9;
+            border-radius: 20px; margin-bottom: 12px; display: flex; align-items: center;
+            gap: 15px; cursor: pointer; transition: all 0.2s; text-align: left;
+        }
+        .payment-option-btn:active { transform: scale(0.98); }
+        .payment-option-btn.pix { border-color: #dcfce7; }
+        .payment-option-btn.pix:hover { background: #f0fdf4; border-color: var(--primary); }
+        .payment-option-btn.card { border-color: #e0f2fe; }
+        .payment-option-btn.card:hover { background: #f0f9ff; border-color: var(--info); }
+        
+        .payment-icon {
+            width: 45px; height: 45px; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center; font-size: 20px;
+        }
+        .pix .payment-icon { background: #dcfce7; color: #166534; }
+        .card .payment-icon { background: #e0f2fe; color: #0369a1; }
 
         .ranking-container { background: #fff; border-radius: 20px; padding: 15px; border: 1px solid var(--border); margin-top: 10px; }
         
@@ -100,10 +119,10 @@
             <input type="hidden" id="edit-index">
             <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Nome:</p>
             <input type="text" id="p-nome" placeholder="Nome do Produto">
-            <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Custo Unitário (R$):</p>
-            <input type="number" id="p-custo" placeholder="Custo R$">
-            <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Venda Unitária (R$):</p>
-            <input type="number" id="p-venda" placeholder="Venda R$">
+            <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Custo Unitário (R<LaTex>$):</p>
+            <input type="number" id="p-custo" placeholder="Custo R$</LaTex>">
+            <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Venda Unitária (R<LaTex>$):</p>
+            <input type="number" id="p-venda" placeholder="Venda R$</LaTex>">
             <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Qtd a adicionar:</p>
             <input type="number" id="p-qtd" placeholder="Quantidade em Estoque">
             <button class="btn-confirm" onclick="salvarProduto()">Salvar e abater do Caixa</button>
@@ -115,6 +134,34 @@
             <h3 id="venda-modal-title" style="margin-bottom:15px">Selecionar</h3>
             <input type="text" id="searchVenda" placeholder="🔍 Buscar produto..." onkeyup="renderListaSelecao()">
             <div id="lista-selecao-venda"></div>
+        </div>
+    </div>
+
+    <!-- NOVO MODAL DE PAGAMENTO -->
+    <div id="modal-pagamento" onclick="if(event.target==this) fecharModalPagamento()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin-bottom:5px">Forma de Pagamento</h3>
+            <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 20px;">Como o cliente deseja pagar?</p>
+            
+            <div id="payment-options">
+                <button class="payment-option-btn pix" onclick="confirmarPagamento('1')">
+                    <div class="payment-icon">💰</div>
+                    <div>
+                        <b style="display:block">Dinheiro / Pix</b>
+                        <small style="color:var(--text-sub)">Sem taxas adicionais</small>
+                    </div>
+                </button>
+
+                <button class="payment-option-btn card" onclick="confirmarPagamento('2')">
+                    <div class="payment-icon">💳</div>
+                    <div>
+                        <b style="display:block">Cartão de Crédito</b>
+                        <small style="color:var(--text-sub)">Aplicar taxa da máquina</small>
+                    </div>
+                </button>
+            </div>
+            
+            <button onclick="fecharModalPagamento()" style="width:100%; background:none; border:none; color:var(--text-sub); font-weight:bold; padding:10px; cursor:pointer">Cancelar</button>
         </div>
     </div>
 
@@ -197,11 +244,11 @@
             </div>
             <div class="report-row">
                 <span>💰 Faturamento Total Bruto:</span>
-                <span id="rep-faturamento" style="color: var(--primary);">R$ 0,00</span>
+                <span id="rep-faturamento" style="color: var(--primary);">R<LaTex>$ 0,00</span>
             </div>
             <div class="report-row">
                 <span>📉 Gastos Extras / Despesas:</span>
-                <span id="rep-gastos" style="color: var(--danger);">R$ 0,00</span>
+                <span id="rep-gastos" style="color: var(--danger);">R$</LaTex> 0,00</span>
             </div>
             <div class="report-row" style="background: #f8fafc; padding: 15px 10px; border-radius: 10px; margin-top: 10px;">
                 <span>📈 Lucro Líquido Real:</span>
@@ -234,6 +281,7 @@
     <script>
         let db = JSON.parse(localStorage.getItem('lucro_facil_v21')) || { produtos: [], logs: [], fiados: [] };
         let contextoVenda = 'venda';
+        let produtoSelecionadoIdx = -1;
 
         db.logs.forEach(l => { if(!l.dataIso) l.dataIso = new Date(); });
         if(db.fiados_pagos) { 
@@ -271,12 +319,12 @@
             const mesesAnos = new Set();
             db.logs.forEach(l => {
                 const d = new Date(l.dataIso);
-                mesesAnos.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`);
+                mesesAnos.add(`${d.getFullYear()}-<LaTex>${String(d.getMonth()+1).padStart(2, '0')}`);
             });
             
             if(mesesAnos.size === 0) {
                 const d = new Date();
-                mesesAnos.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`);
+                mesesAnos.add(`$</LaTex>{d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`);
             }
             
             const listaOrdenada = Array.from(mesesAnos).sort().reverse();
@@ -285,7 +333,7 @@
             select.innerHTML = listaOrdenada.map(ma => {
                 const [ano, mes] = ma.split('-');
                 const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-                return `<option value="${ma}">${nomesMeses[parseInt(mes)-1]} / ${ano}</option>`;
+                return `<option value="${ma}"><LaTex>${nomesMeses[parseInt(mes)-1]} / $</LaTex>{ano}</option>`;
             }).join('');
             
             if(mesSelecionadoAntes && listaOrdenada.includes(mesSelecionadoAntes)) {
@@ -363,7 +411,7 @@
             db.logs.filter(l => l.t === 'v').forEach(l => { rankMap[l.n] = (rankMap[l.n] || 0) + 1; });
             const topProdutos = Object.entries(rankMap).sort((a,b) => b[1] - a[1]).slice(0,3);
             const topList = document.getElementById('top-produtos-list');
-            topList.innerHTML = topProdutos.length ? topProdutos.map(([nome, qtd], i) => `<div><span class="rank-badge">${i+1}º LUGAR</span> <b>${nome}</b> (${qtd} un)</div>`).join("") : "Nenhuma venda ainda.";
+            topList.innerHTML = topProdutos.length ? topProdutos.map(([nome, qtd], i) => `<div><span class="rank-badge"><LaTex>${i+1}º LUGAR</span> <b>$</LaTex>{nome}</b> (${qtd} un)</div>`).join("") : "Nenhuma venda ainda.";
 
             const listEstoque = document.getElementById('lista-estoque');
             if(listEstoque) {
@@ -372,21 +420,20 @@
                     const lucroValor = p.venda - p.custo;
                     const margem = p.custo > 0 ? ((lucroValor / p.custo) * 100).toFixed(0) : 0;
                     
-                    // Condicional para aplicar o ícone vermelho 🔴 e a classe de perigo se o estoque for igual a 0
                     const iconeEstoque = p.qtd === 0 ? '🔴' : '🟢';
-                    const badgeEstoque = p.qtd === 0 ? `<span class="danger-badge">PRODUTO ESGOTADO</span>` : `<span class="margin-badge">Lucro unitário: ${fmt(lucroValor)} (${margem}%)</span>`;
+                    const badgeEstoque = p.qtd === 0 ? `<span class="danger-badge">PRODUTO ESGOTADO</span>` : `<span class="margin-badge">Lucro unitário: ${fmt(lucroValor)} (<LaTex>${margem}%)</span>`;
 
                     listEstoque.innerHTML += `
-                    <div class="item-card" ${p.qtd === 0 ? 'style="border-left: 5px solid var(--danger);"' : ''}>
+                    <div class="item-card" $</LaTex>{p.qtd === 0 ? 'style="border-left: 5px solid var(--danger);"' : ''}>
                         <div>
-                            <b>${iconeEstoque} ${p.nome}</b><br>
-                            <small>${p.qtd} un | Venda: ${fmt(p.venda)}</small><br>
-                            ${badgeEstoque}
+                            <b><LaTex>${iconeEstoque} $</LaTex>{p.nome}</b><br>
+                            <small><LaTex>${p.qtd} un | Venda: $</LaTex>{fmt(p.venda)}</small><br>
+                            <LaTex>${badgeEstoque}
                         </div>
                         <div style="display:flex; align-items:center; gap:3px">
-                            <button class="btn-action" onclick="moverProduto(${i}, -1)">⬆️</button>
-                            <button class="btn-action" onclick="moverProduto(${i}, 1)">⬇️</button>
-                            <button class="btn-action" onclick="abrirModal(${i})">✏️</button>
+                            <button class="btn-action" onclick="moverProduto($</LaTex>{i}, -1)">⬆️</button>
+                            <button class="btn-action" onclick="moverProduto(<LaTex>${i}, 1)">⬇️</button>
+                            <button class="btn-action" onclick="abrirModal($</LaTex>{i})">✏️</button>
                             <button class="btn-action" onclick="if(confirm('Remover do catálogo?')){db.produtos.splice(${i},1);save();}">🗑️</button>
                         </div>
                     </div>`;
@@ -404,12 +451,12 @@
                     const dataExibicao = f.dataPrometida ? `<br><small style="color:var(--warning); font-weight:700;">📅 Pagar em: ${f.dataPrometida}</small>` : '';
                     return `<div class="item-card">
                         <div>
-                            <b>${f.cliente}</b>${dataExibicao}<br>
-                            <small>Item: ${f.item}</small>
+                            <b><LaTex>${f.cliente}</b>$</LaTex>{dataExibicao}<br>
+                            <small>Item: <LaTex>${f.item}</small>
                         </div>
                         <div style="text-align:right">
-                            <b>${fmt(f.valor)}</b><br>
-                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--info)" onclick="cobrarFiado('${f.cliente}', '${f.item}', ${f.valor}, '${f.dataPrometida || ''}')">WhatsApp</button>
+                            <b>$</LaTex>{fmt(f.valor)}</b><br>
+                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--info)" onclick="cobrarFiado('<LaTex>${f.cliente}', '$</LaTex>{f.item}', <LaTex>${f.valor}, '$</LaTex>{f.dataPrometida || ''}')">WhatsApp</button>
                             <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--primary)" onclick="baixarFiado(${i})">PAGO</button>
                         </div>
                     </div>`;
@@ -419,13 +466,13 @@
             const listVendas = document.getElementById('lista-vendas');
             if(listVendas) {
                 listVendas.innerHTML = db.logs.map((l, i) => ({...l, originalIdx: i}))
-                    .filter(l => l.t === 'v').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small>${new Date(l.dataIso).toLocaleDateString()}</small></div><div style="text-align:right"><b style="color:var(--primary)">+ ${fmt(l.v)}</b><br><button onclick="gerarRecibo('Cliente', '${l.n}', ${l.v})" style="border:none; background:none; color:var(--info); font-size:11px; font-weight:bold; cursor:pointer">WhatsApp</button> <button onclick="removerVenda(${l.originalIdx})" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Estornar</button></div></div>`).join("");
+                    .filter(l => l.t === 'v').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small><LaTex>${new Date(l.dataIso).toLocaleDateString()}</small></div><div style="text-align:right"><b style="color:var(--primary)">+ $</LaTex>{fmt(l.v)}</b><br><button onclick="gerarRecibo('Cliente', '<LaTex>${l.n}', $</LaTex>{l.v})" style="border:none; background:none; color:var(--info); font-size:11px; font-weight:bold; cursor:pointer">WhatsApp</button> <button onclick="removerVenda(${l.originalIdx})" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Estornar</button></div></div>`).join("");
             }
 
             const listDesp = document.getElementById('lista-desp');
             if(listDesp) {
                 listDesp.innerHTML = db.logs.map((l, i) => ({...l, originalIdx: i}))
-                    .filter(l => l.t === 'd').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small>${new Date(l.dataIso).toLocaleDateString()}</small></div><div style="text-align:right"><b style="color:var(--danger)">- ${fmt(l.v)}</b><br><button onclick="removerLog(${l.originalIdx})" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Remover</button></div></div>`).join("");
+                    .filter(l => l.t === 'd').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small><LaTex>${new Date(l.dataIso).toLocaleDateString()}</small></div><div style="text-align:right"><b style="color:var(--danger)">- $</LaTex>{fmt(l.v)}</b><br><button onclick="removerLog(${l.originalIdx})" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Remover</button></div></div>`).join("");
             }
 
             if (document.getElementById('relatorios-page').classList.contains('active')) {
@@ -450,9 +497,8 @@
             lista.innerHTML = "";
             db.produtos.forEach((p, i) => {
                 if(p.nome.toLowerCase().includes(termo)) {
-                    // Adicionado aviso visual também na janela de seleção de vendas rápidas se estiver sem estoque
                     const avisoEstoque = p.qtd <= 0 ? ' (SEM ESTOQUE 🔴)' : ` (Estoque: ${p.qtd})`;
-                    lista.innerHTML += `<div class="venda-item-option" onclick="processarSelecao(${i})"><span><b>${p.nome}</b><br><small>${avisoEstoque}</small></span><b style="color:var(--primary)">R$ ${p.venda.toFixed(2)}</b></div>`;
+                    lista.innerHTML += `<div class="venda-item-option" onclick="processarSelecao(<LaTex>${i})"><span><b>$</LaTex>{p.nome}</b><br><small><LaTex>${avisoEstoque}</small></span><b style="color:var(--primary)">R$</LaTex> ${p.venda.toFixed(2)}</b></div>`;
                 }
             });
         }
@@ -461,45 +507,55 @@
             const p = db.produtos[idx];
             if(p.qtd <= 0) return alert("Sem estoque!");
             
-            // Nova Lógica: Pergunta a forma de pagamento e aplica taxa caso seja crédito
+            if(contextoVenda === 'venda') {
+                produtoSelecionadoIdx = idx;
+                fecharModalVenda();
+                abrirModalPagamento();
+            } else {
+                const cliente = prompt("Nome do Cliente:");
+                if(!cliente) return;
+                const dataPrometida = prompt("Data para pagamento (Ex: 10/05):");
+                p.qtd--;
+                db.fiados.push({ cliente, item: p.nome, valor: p.venda, custo: p.custo, dataPrometida, dataIso: new Date() });
+                save(); fecharModalVenda();
+            }
+        }
+
+        function abrirModalPagamento() {
+            document.getElementById('modal-pagamento').style.display = 'flex';
+        }
+
+        function fecharModalPagamento() {
+            document.getElementById('modal-pagamento').style.display = 'none';
+        }
+
+        function confirmarPagamento(forma) {
+            const p = db.produtos[produtoSelecionadoIdx];
             let valorFinalVenda = p.venda;
             let nomeLog = p.nome;
-            
-            const formaPagamento = prompt("Digite a forma de pagamento:\n1 - Dinheiro / Pix\n2 - Cartão de Crédito");
-            
-            if (formaPagamento === '2') {
+
+            if (forma === '2') {
                 const taxaPorcentagem = parseFloat(prompt("Digite a taxa da maquininha (%) exemplo: 3.5")?.replace(',', '.'));
                 if (!isNaN(taxaPorcentagem) && taxaPorcentagem > 0) {
                     const valorTaxa = valorFinalVenda * (taxaPorcentagem / 100);
                     valorFinalVenda = valorFinalVenda - valorTaxa;
                     nomeLog += ` (Crédito - Taxa ${taxaPorcentagem}%)`;
-                    
-                    // Registra a taxa descontada como despesa/gasto operacional de forma transparente
                     db.logs.push({ t: 'd', n: `Taxa Maquininha: ${p.nome}`, v: valorTaxa, dataIso: new Date() });
                 }
             }
 
-            if(contextoVenda === 'venda') {
-                const frete = parseFloat(prompt("Custo de frete/entrega para esta venda? (Deixe 0 se não houver)")?.replace(',','.'));
-                
-                p.qtd--;
-                db.logs.push({ t:'v', n: nomeLog, v: valorFinalVenda, custo: p.custo, dataIso: new Date() });
-                
-                if(frete > 0) {
-                    db.logs.push({ t:'d', n: 'Entrega: ' + p.nome, v: frete, dataIso: new Date() });
-                }
-
-                save(); fecharModalVenda();
-                if(confirm("Venda realizada! Gerar recibo no WhatsApp?")) gerarRecibo("Cliente", p.nome, p.venda);
-            } else {
-                const n = prompt("Nome do cliente:");
-                if(!n) return;
-                const dataP = prompt("Data combinada para pagamento? (Ex: 10/06, Sexta-feira. Se não quiser colocar, deixe em branco):");
-                p.qtd--;
-                db.fiados.push({ cliente: n, item: nomeLog, valor: valorFinalVenda, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '', dataIso: new Date() });
-                save(); fecharModalVenda();
-                if(confirm("Fiado registrado! Enviar mensagem de cobrança ao cliente agora?")) cobrarFiado(n, p.nome, p.venda, dataP || '');
+            const frete = parseFloat(prompt("Custo de frete/entrega para esta venda? (Deixe 0 se não houver)")?.replace(',','.'));
+            
+            p.qtd--;
+            db.logs.push({ t:'v', n: nomeLog, v: valorFinalVenda, custo: p.custo, dataIso: new Date() });
+            
+            if(frete > 0) {
+                db.logs.push({ t:'d', n: 'Frete: ' + p.nome, v: frete, dataIso: new Date() });
             }
+
+            save();
+            fecharModalPagamento();
+            alert("Venda realizada com sucesso!");
         }
 
         function removerVenda(index) {
@@ -527,17 +583,17 @@
         }
 
         function gerarRecibo(cliente, item, valor) {
-            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: ${item}%0AValor: R$ ${valor.toFixed(2)}%0A---%0A_Obrigado pela preferência!_`;
-            window.open(`https://wa.me/?text=${msg}`, '_blank');
+            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: <LaTex>${item}%0AValor: R$</LaTex> <LaTex>${valor.toFixed(2)}%0A---%0A_Obrigado pela preferência!_`;
+            window.open(`https://wa.me/?text=$</LaTex>{msg}`, '_blank');
         }
 
         function cobrarFiado(cliente, item, valor, dataPrometida) {
             const chavePix = prompt("Insira sua chave Pix para enviar na mensagem:");
             if(chavePix === null) return; 
             
-            let dataTexto = dataPrometida ? ` combinada para o dia *${dataPrometida}*` : '';
-            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Lembrete de Pagamento*%0A%0AOlá, ${cliente}! Passando para lembrar do seu pedido:%0A%0A📦 *Item:* ${item}%0A💰 *Valor:* R$ ${valor.toFixed(2)}${dataTexto}%0A%0ASe quiser adiantar, você pode efetuar o pagamento via Pix pela chave abaixo:%0A🔑 *Pix:* ${chavePix}%0A%0A_Qualquer dúvida, estou à disposição!_`;
-            window.open(`https://wa.me/?text=${msg}`, '_blank');
+            let dataTexto = dataPrometida ? ` combinada para o dia *<LaTex>${dataPrometida}*` : '';
+            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Lembrete de Pagamento*%0A%0AOlá, $</LaTex>{cliente}! Passando para lembrar do seu pedido:%0A%0A📦 *Item:* <LaTex>${item}%0A💰 *Valor:* R$</LaTex> <LaTex>${valor.toFixed(2)}$</LaTex>{dataTexto}%0A%0ASe quiser adiantar, você pode efetuar o pagamento via Pix pela chave abaixo:%0A🔑 *Pix:* <LaTex>${chavePix}%0A%0A_Qualquer dúvida, estou à disposição!_`;
+            window.open(`https://wa.me/?text=$</LaTex>{msg}`, '_blank');
         }
 
         function abrirModal(index = -1) {
