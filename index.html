@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Gestão de Vendas v2.7 - WR Acessórios</title>
+    <title>Gestão de Vendas v2.8 - WR Acessórios</title>
     <style>
         :root {
             --primary: #22c55e;
@@ -63,6 +63,7 @@
         .btn-action { background: #f1f5f9; border: none; padding: 10px; border-radius: 12px; cursor: pointer; margin-left: 5px; font-size: 14px; }
 
         .margin-badge { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; margin-top: 4px; }
+        .danger-badge { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; margin-top: 4px; }
         .rank-badge { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; margin-bottom: 5px; display: inline-block; }
 
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; padding: 10px 0 25px 0; z-index: 100; }
@@ -119,7 +120,7 @@
 
     <div id="home" class="page active" style="padding:0">
         <div class="header-green">
-            <span class="version-badge">v2.7</span>
+            <span class="version-badge">v2.8</span>
             <p>Saldo em caixa 💰</p>
             <h1 id="liq-home">R$ 0,00</h1>
             <div class="status-pill"><div class="dot"></div> WR Acessórios Ativa</div>
@@ -234,10 +235,8 @@
         let db = JSON.parse(localStorage.getItem('lucro_facil_v21')) || { produtos: [], logs: [], fiados: [] };
         let contextoVenda = 'venda';
 
-        // Garantir que todos os registros antigos tenham um campo de dataIso válido
         db.logs.forEach(l => { if(!l.dataIso) l.dataIso = new Date(); });
         if(db.fiados_pagos) { 
-            // Migrar fiados pagos legados caso existam para a tabela de logs padrão
             db.fiados_pagos.forEach(fp => {
                 db.logs.push({ t: 'v', n: 'Fiado Pago: ' + fp.cliente, v: fp.valor, custo: fp.custo || 0, dataIso: fp.dataIso || new Date() });
             });
@@ -270,13 +269,11 @@
             if(!select) return;
             
             const mesesAnos = new Set();
-            // Pegar meses dos logs
             db.logs.forEach(l => {
                 const d = new Date(l.dataIso);
                 mesesAnos.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`);
             });
             
-            // Se estiver vazio, adiciona o mês corrente
             if(mesesAnos.size === 0) {
                 const d = new Date();
                 mesesAnos.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`);
@@ -322,18 +319,15 @@
                         mercadoriasSairamQtd++;
                     }
                     if(l.t === 'd') {
-                        // Se for investimento de estoque de reposição
                         if(l.n.startsWith('Invest. Estoque:')) {
                             entradaMercadoria += l.v;
                         } else {
-                            // Gastos gerais (Almoço, frete, passagens)
                             gastosExtras += l.v;
                         }
                     }
                 }
             });
 
-            // Lucro Líquido Real = Faturamento Bruto - Custo do que foi de fato vendido - Gastos Extras/Fretes
             let lucroLiquido = faturamentoBruto - custoDasMercadoriasVendidas - gastosExtras;
 
             document.getElementById('rep-entrada').innerText = fmt(entradaMercadoria);
@@ -377,12 +371,17 @@
                 db.produtos.forEach((p, i) => {
                     const lucroValor = p.venda - p.custo;
                     const margem = p.custo > 0 ? ((lucroValor / p.custo) * 100).toFixed(0) : 0;
+                    
+                    // Condicional para aplicar o ícone vermelho 🔴 e a classe de perigo se o estoque for igual a 0
+                    const iconeEstoque = p.qtd === 0 ? '🔴' : '🟢';
+                    const badgeEstoque = p.qtd === 0 ? `<span class="danger-badge">PRODUTO ESGOTADO</span>` : `<span class="margin-badge">Lucro unitário: ${fmt(lucroValor)} (${margem}%)</span>`;
+
                     listEstoque.innerHTML += `
-                    <div class="item-card">
+                    <div class="item-card" ${p.qtd === 0 ? 'style="border-left: 5px solid var(--danger);"' : ''}>
                         <div>
-                            <b>${p.nome}</b><br>
+                            <b>${iconeEstoque} ${p.nome}</b><br>
                             <small>${p.qtd} un | Venda: ${fmt(p.venda)}</small><br>
-                            <span class="margin-badge">Lucro unitário: ${fmt(lucroValor)} (${margem}%)</span>
+                            ${badgeEstoque}
                         </div>
                         <div style="display:flex; align-items:center; gap:3px">
                             <button class="btn-action" onclick="moverProduto(${i}, -1)">⬆️</button>
@@ -451,7 +450,9 @@
             lista.innerHTML = "";
             db.produtos.forEach((p, i) => {
                 if(p.nome.toLowerCase().includes(termo)) {
-                    lista.innerHTML += `<div class="venda-item-option" onclick="processarSelecao(${i})"><span><b>${p.nome}</b><br><small>Estoque: ${p.qtd}</small></span><b style="color:var(--primary)">R$ ${p.venda.toFixed(2)}</b></div>`;
+                    // Adicionado aviso visual também na janela de seleção de vendas rápidas se estiver sem estoque
+                    const avisoEstoque = p.qtd <= 0 ? ' (SEM ESTOQUE 🔴)' : ` (Estoque: ${p.qtd})`;
+                    lista.innerHTML += `<div class="venda-item-option" onclick="processarSelecao(${i})"><span><b>${p.nome}</b><br><small>${avisoEstoque}</small></span><b style="color:var(--primary)">R$ ${p.venda.toFixed(2)}</b></div>`;
                 }
             });
         }
@@ -460,11 +461,29 @@
             const p = db.produtos[idx];
             if(p.qtd <= 0) return alert("Sem estoque!");
             
+            // Nova Lógica: Pergunta a forma de pagamento e aplica taxa caso seja crédito
+            let valorFinalVenda = p.venda;
+            let nomeLog = p.nome;
+            
+            const formaPagamento = prompt("Digite a forma de pagamento:\n1 - Dinheiro / Pix\n2 - Cartão de Crédito");
+            
+            if (formaPagamento === '2') {
+                const taxaPorcentagem = parseFloat(prompt("Digite a taxa da maquininha (%) exemplo: 3.5")?.replace(',', '.'));
+                if (!isNaN(taxaPorcentagem) && taxaPorcentagem > 0) {
+                    const valorTaxa = valorFinalVenda * (taxaPorcentagem / 100);
+                    valorFinalVenda = valorFinalVenda - valorTaxa;
+                    nomeLog += ` (Crédito - Taxa ${taxaPorcentagem}%)`;
+                    
+                    // Registra a taxa descontada como despesa/gasto operacional de forma transparente
+                    db.logs.push({ t: 'd', n: `Taxa Maquininha: ${p.nome}`, v: valorTaxa, dataIso: new Date() });
+                }
+            }
+
             if(contextoVenda === 'venda') {
                 const frete = parseFloat(prompt("Custo de frete/entrega para esta venda? (Deixe 0 se não houver)")?.replace(',','.'));
                 
                 p.qtd--;
-                db.logs.push({ t:'v', n: p.nome, v: p.venda, custo: p.custo, dataIso: new Date() });
+                db.logs.push({ t:'v', n: nomeLog, v: valorFinalVenda, custo: p.custo, dataIso: new Date() });
                 
                 if(frete > 0) {
                     db.logs.push({ t:'d', n: 'Entrega: ' + p.nome, v: frete, dataIso: new Date() });
@@ -477,7 +496,7 @@
                 if(!n) return;
                 const dataP = prompt("Data combinada para pagamento? (Ex: 10/06, Sexta-feira. Se não quiser colocar, deixe em branco):");
                 p.qtd--;
-                db.fiados.push({ cliente: n, item: p.nome, valor: p.venda, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '', dataIso: new Date() });
+                db.fiados.push({ cliente: n, item: nomeLog, valor: valorFinalVenda, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '', dataIso: new Date() });
                 save(); fecharModalVenda();
                 if(confirm("Fiado registrado! Enviar mensagem de cobrança ao cliente agora?")) cobrarFiado(n, p.nome, p.venda, dataP || '');
             }
@@ -486,9 +505,9 @@
         function removerVenda(index) {
             const log = db.logs[index];
             if(confirm("Deseja apagar esta venda?")) {
-                const estornar = confirm("Deseja devolver 1 unidade de '" + log.n + "' ao estoque?");
+                const estornar = confirm("Deseja devolver 1 unidade de '" + log.n.split(' (')[0] + "' ao estoque?");
                 if(estornar) {
-                    const pIdx = db.produtos.findIndex(prod => prod.nome === log.n);
+                    const pIdx = db.produtos.findIndex(prod => prod.nome === log.n.split(' (')[0]);
                     if(pIdx > -1) {
                         db.produtos[pIdx].qtd += 1;
                     } else {
@@ -581,7 +600,7 @@
             const blob = new Blob([JSON.stringify(db)], { type: "application/json" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = "backup_wr_v27.json"; a.click();
+            a.download = "backup_wr_v28.json"; a.click();
         }
 
         function importarBackup(e) {
