@@ -83,7 +83,6 @@
             align-items: center; text-align: left; cursor: pointer;
         }
 
-        /* Estilos Novos para Botões de Pagamento */
         .payment-option-btn {
             width: 100%; padding: 18px; background: #f8fafc; border: 2px solid #f1f5f9;
             border-radius: 20px; margin-bottom: 12px; display: flex; align-items: center;
@@ -104,7 +103,6 @@
 
         .ranking-container { background: #fff; border-radius: 20px; padding: 15px; border: 1px solid var(--border); margin-top: 10px; }
         
-        /* Estilos do Relatório */
         .report-select-container { background: white; padding: 15px; border-radius: 18px; border: 1px solid var(--border); margin-bottom: 20px; }
         .report-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid var(--border); margin-bottom: 15px; }
         .report-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
@@ -119,10 +117,10 @@
             <input type="hidden" id="edit-index">
             <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Nome:</p>
             <input type="text" id="p-nome" placeholder="Nome do Produto">
-            <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Custo Unitário (R<LaTex>$):</p>
-            <input type="number" id="p-custo" placeholder="Custo R$</LaTex>">
-            <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Venda Unitária (R<LaTex>$):</p>
-            <input type="number" id="p-venda" placeholder="Venda R$</LaTex>">
+            <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Custo Unitário (R$):</p>
+            <input type="number" id="p-custo" placeholder="Custo R$">
+            <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Venda Unitária (R$):</p>
+            <input type="number" id="p-venda" placeholder="Venda R$">
             <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">Qtd a adicionar:</p>
             <input type="number" id="p-qtd" placeholder="Quantidade em Estoque">
             <button class="btn-confirm" onclick="salvarProduto()">Salvar e abater do Caixa</button>
@@ -137,7 +135,6 @@
         </div>
     </div>
 
-    <!-- NOVO MODAL DE PAGAMENTO -->
     <div id="modal-pagamento" onclick="if(event.target==this) fecharModalPagamento()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 style="margin-bottom:5px">Forma de Pagamento</h3>
@@ -244,11 +241,11 @@
             </div>
             <div class="report-row">
                 <span>💰 Faturamento Total Bruto:</span>
-                <span id="rep-faturamento" style="color: var(--primary);">R<LaTex>$ 0,00</span>
+                <span id="rep-faturamento" style="color: var(--primary);">R$ 0,00</span>
             </div>
             <div class="report-row">
                 <span>📉 Gastos Extras / Despesas:</span>
-                <span id="rep-gastos" style="color: var(--danger);">R$</LaTex> 0,00</span>
+                <span id="rep-gastos" style="color: var(--danger);">R$ 0,00</span>
             </div>
             <div class="report-row" style="background: #f8fafc; padding: 15px 10px; border-radius: 10px; margin-top: 10px;">
                 <span>📈 Lucro Líquido Real:</span>
@@ -279,22 +276,22 @@
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('lucro_facil_v21')) || { produtos: [], logs: [], fiados: [] };
-        let contextoVenda = 'venda';
-        let produtoSelecionadoIdx = -1;
+        var db = JSON.parse(localStorage.getItem('lucro_facil_v21')) || { produtos: [], logs: [], fiados: [] };
+        var contextoVenda = 'venda';
+        var produtoSelecionadoIdx = -1;
 
-        db.logs.forEach(l => { if(!l.dataIso) l.dataIso = new Date(); });
+        db.logs.forEach(function(l) { if(!l.dataIso) l.dataIso = new Date(); });
         if(db.fiados_pagos) { 
-            db.fiados_pagos.forEach(fp => {
+            db.fiados_pagos.forEach(function(fp) {
                 db.logs.push({ t: 'v', n: 'Fiado Pago: ' + fp.cliente, v: fp.valor, custo: fp.custo || 0, dataIso: fp.dataIso || new Date() });
             });
             delete db.fiados_pagos;
         }
 
         function tab(id, btn) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
             document.getElementById(id).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(function(b) { b.classList.remove('active'); });
             btn.classList.add('active');
             if (id === 'relatorios-page') carregarFiltrosRelatorio();
             render();
@@ -303,9 +300,9 @@
         function save() { localStorage.setItem('lucro_facil_v21', JSON.stringify(db)); render(); }
 
         function moverProduto(index, direcao) {
-            const novoIndex = index + direcao;
+            var novoIndex = index + direcao;
             if (novoIndex >= 0 && novoIndex < db.produtos.length) {
-                const temp = db.produtos[index];
+                var temp = db.produtos[index];
                 db.produtos[index] = db.produtos[novoIndex];
                 db.produtos[novoIndex] = temp;
                 save();
@@ -313,171 +310,112 @@
         }
 
         function carregarFiltrosRelatorio() {
-            const select = document.getElementById('select-mes-filtro');
+            var select = document.getElementById('select-mes-filtro');
             if(!select) return;
-            
-            const mesesAnos = new Set();
-            db.logs.forEach(l => {
-                const d = new Date(l.dataIso);
-                mesesAnos.add(`${d.getFullYear()}-<LaTex>${String(d.getMonth()+1).padStart(2, '0')}`);
+            var mesesAnos = new Set();
+            db.logs.forEach(function(l) {
+                var d = new Date(l.dataIso);
+                mesesAnos.add(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0'));
             });
-            
             if(mesesAnos.size === 0) {
-                const d = new Date();
-                mesesAnos.add(`$</LaTex>{d.getFullYear()}-${String(d.getMonth()+1).padStart(2, '0')}`);
+                var d = new Date();
+                mesesAnos.add(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0'));
             }
-            
-            const listaOrdenada = Array.from(mesesAnos).sort().reverse();
-            const mesSelecionadoAntes = select.value;
-            
-            select.innerHTML = listaOrdenada.map(ma => {
-                const [ano, mes] = ma.split('-');
-                const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-                return `<option value="${ma}"><LaTex>${nomesMeses[parseInt(mes)-1]} / $</LaTex>{ano}</option>`;
+            var listaOrdenada = Array.from(mesesAnos).sort().reverse();
+            var mesSelecionadoAntes = select.value;
+            select.innerHTML = listaOrdenada.map(function(ma) {
+                var partes = ma.split('-');
+                var nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                return '<option value="' + ma + '">' + nomesMeses[parseInt(partes[1])-1] + ' / ' + partes[0] + '</option>';
             }).join('');
-            
-            if(mesSelecionadoAntes && listaOrdenada.includes(mesSelecionadoAntes)) {
-                select.value = mesSelecionadoAntes;
-            }
+            if(mesSelecionadoAntes && listaOrdenada.includes(mesSelecionadoAntes)) select.value = mesSelecionadoAntes;
         }
 
         function renderRelatorio() {
-            const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            const filtro = document.getElementById('select-mes-filtro').value;
+            var fmt = function(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+            var filtro = document.getElementById('select-mes-filtro').value;
             if(!filtro) return;
-            
-            const [anoFiltro, mesFiltro] = filtro.split('-');
-            
-            let entradaMercadoria = 0;
-            let mercadoriasSairamQtd = 0;
-            let vendasQtd = 0;
-            let faturamentoBruto = 0;
-            let gastosExtras = 0;
-            let custoDasMercadoriasVendidas = 0;
-
-            db.logs.forEach(l => {
-                const d = new Date(l.dataIso);
-                const matchesMes = (d.getFullYear() == anoFiltro && (d.getMonth() + 1) == parseInt(mesFiltro));
-                
+            var partes = filtro.split('-');
+            var anoFiltro = partes[0], mesFiltro = partes[1];
+            var entradaMercadoria = 0, mercadoriasSairamQtd = 0, vendasQtd = 0, faturamentoBruto = 0, gastosExtras = 0, custoDasMercadoriasVendidas = 0;
+            db.logs.forEach(function(l) {
+                var d = new Date(l.dataIso);
+                var matchesMes = (d.getFullYear() == anoFiltro && (d.getMonth() + 1) == parseInt(mesFiltro));
                 if(matchesMes) {
                     if(l.t === 'v') {
-                        vendasQtd++;
-                        faturamentoBruto += l.v;
-                        custoDasMercadoriasVendidas += (l.custo || 0);
-                        mercadoriasSairamQtd++;
+                        vendasQtd++; faturamentoBruto += l.v;
+                        custoDasMercadoriasVendidas += (l.custo || 0); mercadoriasSairamQtd++;
                     }
                     if(l.t === 'd') {
-                        if(l.n.startsWith('Invest. Estoque:')) {
-                            entradaMercadoria += l.v;
-                        } else {
-                            gastosExtras += l.v;
-                        }
+                        if(l.n.indexOf('Invest. Estoque:') === 0) entradaMercadoria += l.v;
+                        else gastosExtras += l.v;
                     }
                 }
             });
-
-            let lucroLiquido = faturamentoBruto - custoDasMercadoriasVendidas - gastosExtras;
-
+            var lucroLiquido = faturamentoBruto - custoDasMercadoriasVendidas - gastosExtras;
             document.getElementById('rep-entrada').innerText = fmt(entradaMercadoria);
             document.getElementById('rep-saida-qtd').innerText = mercadoriasSairamQtd + " un";
             document.getElementById('rep-vendas-qtd').innerText = vendasQtd;
             document.getElementById('rep-faturamento').innerText = fmt(faturamentoBruto);
             document.getElementById('rep-gastos').innerText = fmt(gastosExtras);
-            
-            const txtLucro = document.getElementById('rep-lucro');
+            var txtLucro = document.getElementById('rep-lucro');
             txtLucro.innerText = fmt(lucroLiquido);
             txtLucro.style.color = lucroLiquido >= 0 ? 'var(--primary)' : 'var(--danger)';
         }
 
         function render() {
-            const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            let fat = 0, despesaTotal = 0;
-            
-            db.logs.forEach(l => { 
+            var fmt = function(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+            var fat = 0, despesaTotal = 0;
+            db.logs.forEach(function(l) { 
                 if(l.t === 'v') fat += l.v; 
                 if(l.t === 'd') despesaTotal += l.v; 
             });
-            
             document.getElementById('bruto-home').innerText = fmt(fat);
             document.getElementById('desp-home').innerText = fmt(despesaTotal);
             document.getElementById('liq-home').innerText = fmt(fat - despesaTotal);
-            document.getElementById('v-count').innerText = db.logs.filter(l => l.t === 'v').length;
-            
-            let totalItens = 0;
-            db.produtos.forEach(p => totalItens += p.qtd);
+            document.getElementById('v-count').innerText = db.logs.filter(function(l) { return l.t === 'v'; }).length;
+            var totalItens = 0;
+            db.produtos.forEach(function(p) { totalItens += p.qtd; });
             document.getElementById('p-count').innerText = totalItens;
-
-            const rankMap = {};
-            db.logs.filter(l => l.t === 'v').forEach(l => { rankMap[l.n] = (rankMap[l.n] || 0) + 1; });
-            const topProdutos = Object.entries(rankMap).sort((a,b) => b[1] - a[1]).slice(0,3);
-            const topList = document.getElementById('top-produtos-list');
-            topList.innerHTML = topProdutos.length ? topProdutos.map(([nome, qtd], i) => `<div><span class="rank-badge"><LaTex>${i+1}º LUGAR</span> <b>$</LaTex>{nome}</b> (${qtd} un)</div>`).join("") : "Nenhuma venda ainda.";
-
-            const listEstoque = document.getElementById('lista-estoque');
+            var rankMap = {};
+            db.logs.filter(function(l) { return l.t === 'v'; }).forEach(function(l) { rankMap[l.n] = (rankMap[l.n] || 0) + 1; });
+            var topProdutos = Object.entries(rankMap).sort(function(a,b) { return b[1] - a[1]; }).slice(0,3);
+            var topList = document.getElementById('top-produtos-list');
+            topList.innerHTML = topProdutos.length ? topProdutos.map(function(item, i) { return '<div><span class="rank-badge">' + (i+1) + 'º LUGAR</span> <b>' + item[0] + '</b> (' + item[1] + ' un)</div>'; }).join("") : "Nenhuma venda ainda.";
+            var listEstoque = document.getElementById('lista-estoque');
             if(listEstoque) {
                 listEstoque.innerHTML = "";
-                db.produtos.forEach((p, i) => {
-                    const lucroValor = p.venda - p.custo;
-                    const margem = p.custo > 0 ? ((lucroValor / p.custo) * 100).toFixed(0) : 0;
-                    
-                    const iconeEstoque = p.qtd === 0 ? '🔴' : '🟢';
-                    const badgeEstoque = p.qtd === 0 ? `<span class="danger-badge">PRODUTO ESGOTADO</span>` : `<span class="margin-badge">Lucro unitário: ${fmt(lucroValor)} (<LaTex>${margem}%)</span>`;
-
-                    listEstoque.innerHTML += `
-                    <div class="item-card" $</LaTex>{p.qtd === 0 ? 'style="border-left: 5px solid var(--danger);"' : ''}>
-                        <div>
-                            <b><LaTex>${iconeEstoque} $</LaTex>{p.nome}</b><br>
-                            <small><LaTex>${p.qtd} un | Venda: $</LaTex>{fmt(p.venda)}</small><br>
-                            <LaTex>${badgeEstoque}
-                        </div>
-                        <div style="display:flex; align-items:center; gap:3px">
-                            <button class="btn-action" onclick="moverProduto($</LaTex>{i}, -1)">⬆️</button>
-                            <button class="btn-action" onclick="moverProduto(<LaTex>${i}, 1)">⬇️</button>
-                            <button class="btn-action" onclick="abrirModal($</LaTex>{i})">✏️</button>
-                            <button class="btn-action" onclick="if(confirm('Remover do catálogo?')){db.produtos.splice(${i},1);save();}">🗑️</button>
-                        </div>
-                    </div>`;
+                db.produtos.forEach(function(p, i) {
+                    var lucroValor = p.venda - p.custo;
+                    var margem = p.custo > 0 ? ((lucroValor / p.custo) * 100).toFixed(0) : 0;
+                    var iconeEstoque = p.qtd === 0 ? '🔴' : '🟢';
+                    var badgeEstoque = p.qtd === 0 ? '<span class="danger-badge">PRODUTO ESGOTADO</span>' : '<span class="margin-badge">Lucro unitário: ' + fmt(lucroValor) + ' (' + margem + '%)</span>';
+                    var borderStyle = p.qtd === 0 ? 'style="border-left: 5px solid var(--danger);"' : '';
+                    listEstoque.innerHTML += '<div class="item-card" ' + borderStyle + '><div><b>' + iconeEstoque + ' ' + p.nome + '</b><br><small>' + p.qtd + ' un | Venda: ' + fmt(p.venda) + '</small><br>' + badgeEstoque + '</div><div style="display:flex; align-items:center; gap:3px"><button class="btn-action" onclick="moverProduto(' + i + ', -1)">⬆️</button><button class="btn-action" onclick="moverProduto(' + i + ', 1)">⬇️</button><button class="btn-action" onclick="abrirModal(' + i + ')">✏️</button><button class="btn-action" onclick="if(confirm(\'Remover do catálogo?\')){db.produtos.splice(' + i + ',1);save();}">🗑️</button></div></div>';
                 });
             }
-
-            let somaCusto = 0, somaVenda = 0;
-            db.produtos.forEach(p => { somaCusto += (p.custo * p.qtd); somaVenda += (p.venda * p.qtd); });
+            var somaCusto = 0, somaVenda = 0;
+            db.produtos.forEach(function(p) { somaCusto += (p.custo * p.qtd); somaVenda += (p.venda * p.qtd); });
             if(document.getElementById('invest-total')) document.getElementById('invest-total').innerText = fmt(somaCusto);
             if(document.getElementById('venda-estoque-total')) document.getElementById('venda-estoque-total').innerText = fmt(somaVenda);
-
-            const listFiado = document.getElementById('lista-fiado');
+            var listFiado = document.getElementById('lista-fiado');
             if(listFiado) {
-                listFiado.innerHTML = db.fiados.map((f, i) => {
-                    const dataExibicao = f.dataPrometida ? `<br><small style="color:var(--warning); font-weight:700;">📅 Pagar em: ${f.dataPrometida}</small>` : '';
-                    return `<div class="item-card">
-                        <div>
-                            <b><LaTex>${f.cliente}</b>$</LaTex>{dataExibicao}<br>
-                            <small>Item: <LaTex>${f.item}</small>
-                        </div>
-                        <div style="text-align:right">
-                            <b>$</LaTex>{fmt(f.valor)}</b><br>
-                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--info)" onclick="cobrarFiado('<LaTex>${f.cliente}', '$</LaTex>{f.item}', <LaTex>${f.valor}, '$</LaTex>{f.dataPrometida || ''}')">WhatsApp</button>
-                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--primary)" onclick="baixarFiado(${i})">PAGO</button>
-                        </div>
-                    </div>`;
+                listFiado.innerHTML = db.fiados.map(function(f, i) {
+                    var dataExibicao = f.dataPrometida ? '<br><small style="color:var(--warning); font-weight:700;">📅 Pagar em: ' + f.dataPrometida + '</small>' : '';
+                    return '<div class="item-card"><div><b>' + f.cliente + '</b>' + dataExibicao + '<br><small>Item: ' + f.item + '</small></div><div style="text-align:right"><b>' + fmt(f.valor) + '</b><br><button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--info)" onclick="cobrarFiado(\'' + f.cliente + '\', \'' + f.item + '\', ' + f.valor + ', \'' + (f.dataPrometida || '') + '\')">WhatsApp</button><button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--primary)" onclick="baixarFiado(' + i + ')">PAGO</button></div></div>';
                 }).join("");
             }
-
-            const listVendas = document.getElementById('lista-vendas');
+            var listVendas = document.getElementById('lista-vendas');
             if(listVendas) {
-                listVendas.innerHTML = db.logs.map((l, i) => ({...l, originalIdx: i}))
-                    .filter(l => l.t === 'v').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small><LaTex>${new Date(l.dataIso).toLocaleDateString()}</small></div><div style="text-align:right"><b style="color:var(--primary)">+ $</LaTex>{fmt(l.v)}</b><br><button onclick="gerarRecibo('Cliente', '<LaTex>${l.n}', $</LaTex>{l.v})" style="border:none; background:none; color:var(--info); font-size:11px; font-weight:bold; cursor:pointer">WhatsApp</button> <button onclick="removerVenda(${l.originalIdx})" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Estornar</button></div></div>`).join("");
+                listVendas.innerHTML = db.logs.map(function(l, i) { var obj = Object.assign({}, l); obj.originalIdx = i; return obj; })
+                    .filter(function(l) { return l.t === 'v'; }).reverse().map(function(l) { return '<div class="item-card"><div><b>' + l.n + '</b><br><small>' + new Date(l.dataIso).toLocaleDateString() + '</small></div><div style="text-align:right"><b style="color:var(--primary)">+ ' + fmt(l.v) + '</b><br><button onclick="gerarRecibo(\'Cliente\', \'' + l.n + '\', ' + l.v + ')" style="border:none; background:none; color:var(--info); font-size:11px; font-weight:bold; cursor:pointer">WhatsApp</button> <button onclick="removerVenda(' + l.originalIdx + ')" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Estornar</button></div></div>'; }).join("");
             }
-
-            const listDesp = document.getElementById('lista-desp');
+            var listDesp = document.getElementById('lista-desp');
             if(listDesp) {
-                listDesp.innerHTML = db.logs.map((l, i) => ({...l, originalIdx: i}))
-                    .filter(l => l.t === 'd').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small><LaTex>${new Date(l.dataIso).toLocaleDateString()}</small></div><div style="text-align:right"><b style="color:var(--danger)">- $</LaTex>{fmt(l.v)}</b><br><button onclick="removerLog(${l.originalIdx})" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Remover</button></div></div>`).join("");
+                listDesp.innerHTML = db.logs.map(function(l, i) { var obj = Object.assign({}, l); obj.originalIdx = i; return obj; })
+                    .filter(function(l) { return l.t === 'd'; }).reverse().map(function(l) { return '<div class="item-card"><div><b>' + l.n + '</b><br><small>' + new Date(l.dataIso).toLocaleDateString() + '</small></div><div style="text-align:right"><b style="color:var(--danger)">- ' + fmt(l.v) + '</b><br><button onclick="removerLog(' + l.originalIdx + ')" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Remover</button></div></div>'; }).join("");
             }
-
-            if (document.getElementById('relatorios-page').classList.contains('active')) {
-                renderRelatorio();
-            }
+            if (document.getElementById('relatorios-page').classList.contains('active')) renderRelatorio();
         }
 
         function abrirSelecaoVisual(tipo) {
@@ -492,114 +430,93 @@
         function fecharModalVenda() { document.getElementById('modal-venda').style.display = 'none'; }
 
         function renderListaSelecao() {
-            const termo = document.getElementById('searchVenda').value.toLowerCase();
-            const lista = document.getElementById('lista-selecao-venda');
+            var termo = document.getElementById('searchVenda').value.toLowerCase();
+            var lista = document.getElementById('lista-selecao-venda');
             lista.innerHTML = "";
-            db.produtos.forEach((p, i) => {
-                if(p.nome.toLowerCase().includes(termo)) {
-                    const avisoEstoque = p.qtd <= 0 ? ' (SEM ESTOQUE 🔴)' : ` (Estoque: ${p.qtd})`;
-                    lista.innerHTML += `<div class="venda-item-option" onclick="processarSelecao(<LaTex>${i})"><span><b>$</LaTex>{p.nome}</b><br><small><LaTex>${avisoEstoque}</small></span><b style="color:var(--primary)">R$</LaTex> ${p.venda.toFixed(2)}</b></div>`;
+            db.produtos.forEach(function(p, i) {
+                if(p.nome.toLowerCase().indexOf(termo) > -1) {
+                    var avisoEstoque = p.qtd <= 0 ? ' (SEM ESTOQUE 🔴)' : ' (Estoque: ' + p.qtd + ')';
+                    lista.innerHTML += '<div class="venda-item-option" onclick="processarSelecao(' + i + ')"><span><b>' + p.nome + '</b><br><small>' + avisoEstoque + '</small></span><b style="color:var(--primary)">R$ ' + p.venda.toFixed(2) + '</b></div>';
                 }
             });
         }
 
         function processarSelecao(idx) {
-            const p = db.produtos[idx];
+            var p = db.produtos[idx];
             if(p.qtd <= 0) return alert("Sem estoque!");
-            
             if(contextoVenda === 'venda') {
                 produtoSelecionadoIdx = idx;
-                fecharModalVenda();
-                abrirModalPagamento();
+                fecharModalVenda(); abrirModalPagamento();
             } else {
-                const cliente = prompt("Nome do Cliente:");
+                var cliente = prompt("Nome do Cliente:");
                 if(!cliente) return;
-                const dataPrometida = prompt("Data para pagamento (Ex: 10/05):");
+                var dataPrometida = prompt("Data para pagamento (Ex: 10/05):");
                 p.qtd--;
-                db.fiados.push({ cliente, item: p.nome, valor: p.venda, custo: p.custo, dataPrometida, dataIso: new Date() });
+                db.fiados.push({ cliente: cliente, item: p.nome, valor: p.venda, custo: p.custo, dataPrometida: dataPrometida, dataIso: new Date() });
                 save(); fecharModalVenda();
             }
         }
 
-        function abrirModalPagamento() {
-            document.getElementById('modal-pagamento').style.display = 'flex';
-        }
-
-        function fecharModalPagamento() {
-            document.getElementById('modal-pagamento').style.display = 'none';
-        }
+        function abrirModalPagamento() { document.getElementById('modal-pagamento').style.display = 'flex'; }
+        function fecharModalPagamento() { document.getElementById('modal-pagamento').style.display = 'none'; }
 
         function confirmarPagamento(forma) {
-            const p = db.produtos[produtoSelecionadoIdx];
-            let valorFinalVenda = p.venda;
-            let nomeLog = p.nome;
-
+            var p = db.produtos[produtoSelecionadoIdx];
+            var valorFinalVenda = p.venda;
+            var nomeLog = p.nome;
             if (forma === '2') {
-                const taxaPorcentagem = parseFloat(prompt("Digite a taxa da maquininha (%) exemplo: 3.5")?.replace(',', '.'));
+                var respTaxa = prompt("Digite a taxa da maquininha (%) exemplo: 3.5");
+                var taxaPorcentagem = parseFloat(respTaxa ? respTaxa.replace(',', '.') : 0);
                 if (!isNaN(taxaPorcentagem) && taxaPorcentagem > 0) {
-                    const valorTaxa = valorFinalVenda * (taxaPorcentagem / 100);
+                    var valorTaxa = valorFinalVenda * (taxaPorcentagem / 100);
                     valorFinalVenda = valorFinalVenda - valorTaxa;
-                    nomeLog += ` (Crédito - Taxa ${taxaPorcentagem}%)`;
-                    db.logs.push({ t: 'd', n: `Taxa Maquininha: ${p.nome}`, v: valorTaxa, dataIso: new Date() });
+                    nomeLog += ' (Crédito - Taxa ' + taxaPorcentagem + '%)';
+                    db.logs.push({ t: 'd', n: 'Taxa Maquininha: ' + p.nome, v: valorTaxa, dataIso: new Date() });
                 }
             }
-
-            const frete = parseFloat(prompt("Custo de frete/entrega para esta venda? (Deixe 0 se não houver)")?.replace(',','.'));
-            
+            var respFrete = prompt("Custo de frete/entrega para esta venda? (Deixe 0 se não houver)");
+            var frete = parseFloat(respFrete ? respFrete.replace(',', '.') : 0);
             p.qtd--;
             db.logs.push({ t:'v', n: nomeLog, v: valorFinalVenda, custo: p.custo, dataIso: new Date() });
-            
-            if(frete > 0) {
-                db.logs.push({ t:'d', n: 'Frete: ' + p.nome, v: frete, dataIso: new Date() });
-            }
-
-            save();
-            fecharModalPagamento();
-            alert("Venda realizada com sucesso!");
+            if(frete > 0) db.logs.push({ t:'d', n: 'Frete: ' + p.nome, v: frete, dataIso: new Date() });
+            save(); fecharModalPagamento(); alert("Venda realizada com sucesso!");
         }
 
         function removerVenda(index) {
-            const log = db.logs[index];
+            var log = db.logs[index];
             if(confirm("Deseja apagar esta venda?")) {
-                const estornar = confirm("Deseja devolver 1 unidade de '" + log.n.split(' (')[0] + "' ao estoque?");
+                var estornar = confirm("Deseja devolver 1 unidade de '" + log.n.split(' (')[0] + "' ao estoque?");
                 if(estornar) {
-                    const pIdx = db.produtos.findIndex(prod => prod.nome === log.n.split(' (')[0]);
-                    if(pIdx > -1) {
-                        db.produtos[pIdx].qtd += 1;
-                    } else {
-                        alert("Produto não encontrado no catálogo para estorno, mas o valor foi removido do caixa.");
-                    }
+                    var pIdx = db.produtos.findIndex(function(prod) { return prod.nome === log.n.split(' (')[0]; });
+                    if(pIdx > -1) db.produtos[pIdx].qtd += 1;
+                    else alert("Produto não encontrado no catálogo para estorno, mas o valor foi removido do caixa.");
                 }
-                db.logs.splice(index, 1);
-                save();
+                db.logs.splice(index, 1); save();
             }
         }
 
         function removerLog(index) {
-            if(confirm("Deseja remover este gasto?")) {
-                db.logs.splice(index, 1);
-                save();
-            }
+            if(confirm("Deseja remover este gasto?")) { db.logs.splice(index, 1); save(); }
         }
 
         function gerarRecibo(cliente, item, valor) {
-            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: <LaTex>${item}%0AValor: R$</LaTex> <LaTex>${valor.toFixed(2)}%0A---%0A_Obrigado pela preferência!_`;
-            window.open(`https://wa.me/?text=$</LaTex>{msg}`, '_blank');
+            var msg = "*WR ACESSÓRIOS MOBILE*%0A---%0A*Recibo de Compra*%0A%0AOlá, " + cliente + "!%0AItem: " + item + "%0AValor: R$ " + valor.toFixed(2) + "%0A---%0A_Obrigado pela preferência!_";
+            window.open("https://wa.me/?text=" + msg, '_blank');
         }
 
         function cobrarFiado(cliente, item, valor, dataPrometida) {
-            const chavePix = prompt("Insira sua chave Pix para enviar na mensagem:");
+            var chavePix = prompt("Insira sua chave Pix para enviar na mensagem:");
             if(chavePix === null) return; 
-            
-            let dataTexto = dataPrometida ? ` combinada para o dia *<LaTex>${dataPrometida}*` : '';
-            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Lembrete de Pagamento*%0A%0AOlá, $</LaTex>{cliente}! Passando para lembrar do seu pedido:%0A%0A📦 *Item:* <LaTex>${item}%0A💰 *Valor:* R$</LaTex> <LaTex>${valor.toFixed(2)}$</LaTex>{dataTexto}%0A%0ASe quiser adiantar, você pode efetuar o pagamento via Pix pela chave abaixo:%0A🔑 *Pix:* <LaTex>${chavePix}%0A%0A_Qualquer dúvida, estou à disposição!_`;
-            window.open(`https://wa.me/?text=$</LaTex>{msg}`, '_blank');
+            var dataTexto = dataPrometida ? " combinada para o dia *"+dataPrometida+"*" : '';
+            var msg = "*WR ACESSÓRIOS MOBILE*%0A---%0A*Lembrete de Pagamento*%0A%0AOlá, " + cliente + "! Passando para lembrar do seu pedido:%0A%0A📦 *Item:* " + item + "%0A💰 *Valor:* R$ " + valor.toFixed(2) + dataTexto + "%0A%0ASe quiser adiantar, você pode efetuar o pagamento via Pix pela chave abaixo:%0A🔑 *Pix:* " + chavePix + "%0A%0A_Qualquer dúvida, estou à disposição!_";
+            window.open("https://wa.me/?text=" + msg, '_blank');
         }
 
-        function abrirModal(index = -1) {
-            const editIndex = document.getElementById('edit-index');
+        function abrirModal(index) {
+            index = index !== undefined ? index : -1;
+            var editIndex = document.getElementById('edit-index');
             if(index > -1) {
-                const p = db.produtos[index];
+                var p = db.produtos[index];
                 document.getElementById('p-nome').value = p.nome;
                 document.getElementById('p-custo').value = p.custo;
                 document.getElementById('p-venda').value = p.venda;
@@ -609,7 +526,7 @@
             } else {
                 editIndex.value = -1;
                 document.getElementById('modal-title').innerText = "Novo Produto";
-                document.querySelectorAll('#modal input').forEach(i => i.value = "");
+                document.querySelectorAll('#modal input').forEach(function(i) { i.value = ""; });
             }
             document.getElementById('modal').style.display = 'flex';
         }
@@ -617,58 +534,51 @@
         function fecharModal() { document.getElementById('modal').style.display = 'none'; }
 
         function salvarProduto() {
-            const idx = parseInt(document.getElementById('edit-index').value);
-            const nome = document.getElementById('p-nome').value;
-            const custo = parseFloat(document.getElementById('p-custo').value) || 0;
-            const venda = parseFloat(document.getElementById('p-venda').value) || 0;
-            const qtdAdicional = parseInt(document.getElementById('p-qtd').value) || 0;
-
+            var idx = parseInt(document.getElementById('edit-index').value);
+            var nome = document.getElementById('p-nome').value;
+            var custo = parseFloat(document.getElementById('p-custo').value) || 0;
+            var venda = parseFloat(document.getElementById('p-venda').value) || 0;
+            var qtdAdicional = parseInt(document.getElementById('p-qtd').value) || 0;
             if(idx > -1) {
-                db.produtos[idx].nome = nome;
-                db.produtos[idx].custo = custo;
-                db.produtos[idx].venda = venda;
-                db.produtos[idx].qtd += qtdAdicional;
+                db.produtos[idx].nome = nome; db.produtos[idx].custo = custo;
+                db.produtos[idx].venda = venda; db.produtos[idx].qtd += qtdAdicional;
             } else {
-                db.produtos.push({ nome, custo, venda, qtd: qtdAdicional });
+                db.produtos.push({ nome: nome, custo: custo, venda: venda, qtd: qtdAdicional });
             }
-
-            const custoTotalInvestido = custo * qtdAdicional;
-            if(custoTotalInvestido > 0) {
-                db.logs.push({ t:'d', n: 'Invest. Estoque: ' + nome, v: custoTotalInvestido, dataIso: new Date() });
-            }
-
+            var custoTotalInvestido = custo * qtdAdicional;
+            if(custoTotalInvestido > 0) db.logs.push({ t:'d', n: 'Invest. Estoque: ' + nome, v: custoTotalInvestido, dataIso: new Date() });
             save(); fecharModal();
         }
 
         function baixarFiado(i) {
-            const f = db.fiados[i];
+            var f = db.fiados[i];
             db.logs.push({ t:'v', n: 'Fiado Pago: ' + f.cliente + ' (' + f.item + ')', v: f.valor, custo: f.custo, dataIso: new Date() });
             db.fiados.splice(i, 1); save();
         }
 
         function novaDespesa() {
-            const n = prompt("Descrição do gasto (Ex: Almoço, Passagem):");
-            const v = parseFloat(prompt("Valor R$:")?.replace(',','.'));
+            var n = prompt("Descrição do gasto (Ex: Almoço, Passagem):");
+            var vResp = prompt("Valor R$:");
+            var v = parseFloat(vResp ? vResp.replace(',','.') : 0);
             if(n && v) { db.logs.push({ t:'d', n: n, v: v, dataIso: new Date() }); save(); }
         }
 
         function exportarBackup() {
-            const blob = new Blob([JSON.stringify(db)], { type: "application/json" });
-            const a = document.createElement("a");
+            var blob = new Blob([JSON.stringify(db)], { type: "application/json" });
+            var a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
             a.download = "backup_wr_v28.json"; a.click();
         }
 
         function importarBackup(e) {
-            const reader = new FileReader();
-            reader.onload = (ev) => { 
+            var reader = new FileReader();
+            reader.onload = function(ev) { 
                 try { db = JSON.parse(ev.target.result); save(); alert("Dados importados!"); } catch(err){ alert("Erro!"); } 
             };
             reader.readAsText(e.target.files[0]);
         }
 
         function reset() { if(confirm("Apagar TUDO? Isso removerá estoque, vendas e gastos.")) { db = { produtos: [], logs: [], fiados: [] }; save(); } }
-
         render();
     </script>
 </body>
