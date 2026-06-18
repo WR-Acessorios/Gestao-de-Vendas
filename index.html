@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Gestão de Vendas v2.8 - WR Acessórios</title>
+    <title>Gestão de Vendas v2.9 - WR Acessórios</title>
     <style>
         :root {
             --primary: #22c55e;
@@ -70,7 +70,7 @@
         .nav-item.active { color: var(--primary); }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.5; }
 
-        #modal, #modal-venda { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items: center; justify-content: center; padding: 20px; }
+        #modal, #modal-venda, #modal-pagamento { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: white; padding: 25px; border-radius: 25px; width: 100%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
         
         input, select { width:100%; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 15px; font-size: 16px; }
@@ -89,10 +89,23 @@
         .report-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid var(--border); margin-bottom: 15px; }
         .report-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
         .report-row:last-child { border-bottom: none; font-weight: bold; font-size: 16px; padding-top: 15px; }
+
+        /* Estilos do Novo Modal de Pagamento baseado na imagem_2.png */
+        .pay-option-btn {
+            width: 100%; border: 1px solid var(--border); border-radius: 20px; padding: 15px;
+            background: white; margin-bottom: 12px; display: flex; align-items: center; gap: 15px;
+            text-align: left; cursor: pointer; transition: all 0.2s;
+        }
+        .pay-option-btn:active { background: #f8fafc; }
+        .pay-icon-box {
+            width: 45px; height: 45px; border-radius: 15px; display: flex;
+            align-items: center; justify-content: center; font-size: 22px;
+        }
     </style>
 </head>
 <body>
 
+    <!-- MODAL PRODUTO -->
     <div id="modal" onclick="if(event.target==this) fecharModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 id="modal-title" style="margin-bottom:20px">Produto</h3>
@@ -109,6 +122,7 @@
         </div>
     </div>
 
+    <!-- MODAL SELEÇÃO DE PRODUTO -->
     <div id="modal-venda" onclick="if(event.target==this) fecharModalVenda()">
         <div class="modal-content" onclick="event.stopPropagation()">
             <h3 id="venda-modal-title" style="margin-bottom:15px">Selecionar</h3>
@@ -117,10 +131,36 @@
         </div>
     </div>
 
+    <!-- MODAL FORMA DE PAGAMENTO (RESTAURADO IGUAL À FOTO image_2.png) -->
+    <div id="modal-pagamento" onclick="if(event.target==this) fecharModalPagamento()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">Forma de Pagamento</h3>
+            <p style="font-size: 14px; color: var(--text-sub); margin-bottom: 25px;">Como o cliente deseja pagar?</p>
+            
+            <button class="pay-option-btn" style="border-color: #e2fbe9;" onclick="finalizarVendaRapida('dinheiro_pix')">
+                <div class="pay-icon-box" style="background: #e2fbe9;">💰</div>
+                <div>
+                    <strong style="color: #007aff; font-size: 15px; display: block;">Dinheiro / Pix</strong>
+                    <span style="color: var(--text-sub); font-size: 12px;">Sem taxas adicionais</span>
+                </div>
+            </button>
+
+            <button class="pay-option-btn" style="border-color: #e8f4ff;" onclick="finalizarVendaRapida('cartao')">
+                <div class="pay-icon-box" style="background: #e8f4ff;">💳</div>
+                <div>
+                    <strong style="color: #007aff; font-size: 15px; display: block;">Cartão de Crédito</strong>
+                    <span style="color: var(--text-sub); font-size: 12px;">Aplicar taxa da máquina</span>
+                </div>
+            </button>
+
+            <button class="btn-confirm" style="background: none; color: #64748b; font-weight: 600; margin-top: 15px; padding: 10px;" onclick="fecharModalPagamento()">Cancelar</button>
+        </div>
+    </div>
+
     <!-- HOME -->
     <div id="home" class="page active" style="padding:0">
         <div class="header-green">
-            <span class="version-badge">v2.8</span>
+            <span class="version-badge">v2.9</span>
             <p>Saldo em caixa 💰</p>
             <h1 id="liq-home">R$ 0,00</h1>
             <div class="status-pill"><div class="dot"></div> WR Acessórios Ativa</div>
@@ -240,6 +280,7 @@
     <script>
         let db = JSON.parse(localStorage.getItem('lucro_facil_v21')) || { produtos: [], logs: [], fiados: [] };
         let contextoVenda = 'venda';
+        let produtoSelecionadoTemporario = null;
 
         db.logs.forEach(l => { if(!l.dataIso) l.dataIso = new Date(); });
 
@@ -438,6 +479,9 @@
         }
 
         function fecharModalVenda() { document.getElementById('modal-venda').style.display = 'none'; }
+        
+        function abrirModalPagamento() { document.getElementById('modal-pagamento').style.display = 'flex'; }
+        function fecharModalPagamento() { document.getElementById('modal-pagamento').style.display = 'none'; }
 
         function renderListaSelecao() {
             const termo = document.getElementById('searchVenda').value.toLowerCase();
@@ -455,17 +499,9 @@
             if(p.qtd <= 0) return alert("Sem estoque!");
             
             if(contextoVenda === 'venda') {
-                const frete = parseFloat(prompt("Custo de frete/entrega para esta venda? (Deixe 0 se não houver)")?.replace(',','.'));
-                
-                p.qtd--;
-                db.logs.push({ t:'v', n: p.nome, v: p.venda, custo: p.custo, dataIso: new Date() });
-                
-                if(frete > 0) {
-                    db.logs.push({ t:'d', n: 'Entrega: ' + p.nome, v: frete, dataIso: new Date() });
-                }
-
-                save(); fecharModalVenda();
-                if(confirm("Venda realizada! Gerar recibo com cobrança Pix no WhatsApp?")) solicitarChavePixRecibo("Cliente", p.nome, p.venda);
+                produtoSelecionadoTemporario = { p, idx };
+                fecharModalVenda();
+                abrirModalPagamento(); // Abre o modal igual ao da foto!
             } else {
                 const n = prompt("Nome do cliente:");
                 if(!n) return;
@@ -477,12 +513,50 @@
             }
         }
 
+        function finalizarVendaRapida(formaPagto) {
+            if(!produtoSelecionadoTemporario) return;
+            
+            const p = produtoSelecionadoTemporario.p;
+            let valorFinalVenda = p.venda;
+            let nomeLog = p.nome;
+
+            if(formaPagto === 'cartao') {
+                const aplicarTaxa = confirm("Deseja aplicar a taxa padrão da máquina (Ex: + R$ 2.00 ou equivalente)? Se sim, digite o valor final cobrado ou clique em OK para calcular.");
+                let novoValor = parseFloat(prompt("Digite o valor cobrado no cartão (com a taxa inclusa):", (p.venda * 1.05).toFixed(2))?.replace(',','.'));
+                if(!isNaN(novoValor) && novoValor > 0) {
+                    valorFinalVenda = novoValor;
+                    nomeLog = p.nome + " (Cartão)";
+                }
+            }
+
+            const frete = parseFloat(prompt("Custo de frete/entrega para esta venda? (Deixe 0 se não houver)")?.replace(',','.'));
+            
+            p.qtd--;
+            db.logs.push({ t:'v', n: nomeLog, v: valorFinalVenda, custo: p.custo, dataIso: new Date() });
+            
+            if(frete > 0) {
+                db.logs.push({ t:'d', n: 'Entrega: ' + p.nome, v: frete, dataIso: new Date() });
+            }
+
+            save(); 
+            fecharModalPagamento();
+            
+            const enviarRecibo = confirm("Venda realizada! Gerar recibo com cobrança Pix no WhatsApp?");
+            if(enviarRecibo) {
+                solicitarChavePixRecibo("Cliente", nomeLog, valorFinalVenda);
+            }
+            
+            produtoSelecionadoTemporario = null;
+        }
+
         function removerVenda(index) {
             const log = db.logs[index];
             if(confirm("Deseja apagar esta venda?")) {
                 const estornar = confirm("Deseja devolver 1 unidade de '" + log.n + "' ao estoque?");
                 if(estornar) {
-                    const pIdx = db.produtos.findIndex(prod => prod.nome === log.n);
+                    // Remove tags extras do nome caso tenha (Cartão)
+                    const nomeLimpo = log.n.replace(" (Cartão)", "");
+                    const pIdx = db.produtos.findIndex(prod => prod.nome === nomeLimpo || prod.nome === log.n);
                     if(pIdx > -1) {
                         db.produtos[pIdx].qtd += 1;
                     } else {
@@ -582,7 +656,7 @@
             const blob = new Blob([JSON.stringify(db)], { type: "application/json" });
             const a = document.createElement("a");
             a.href = URL.createObjectURL(blob);
-            a.download = "backup_wr_v28.json"; a.click();
+            a.download = "backup_wr_v29.json"; a.click();
         }
 
         function importarBackup(e) {
