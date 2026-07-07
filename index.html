@@ -492,6 +492,14 @@
             } else {
                 const n = prompt("Nome do cliente:");
                 if(!n) return;
+                
+                let descontoStr = prompt("Deseja aplicar algum desconto em R$ para esse fiado? (Digite 0 ou deixe vazio se não houver):", "0");
+                let desconto = parseFloat(descontoStr?.replace(',', '.')) || 0;
+                if(isNaN(desconto) || desconto < 0) desconto = 0;
+                
+                let valorFinalFiado = p.venda - desconto;
+                if (valorFinalFiado < 0) valorFinalFiado = 0;
+
                 const dataP = prompt("Data combinada para pagamento? (Ex: 10/06, Sexta-feira. Se não quiser colocar, deixe em branco):");
                 p.qtd--;
                 
@@ -499,9 +507,9 @@
                     alert("⚠️ ATENÇÃO: O produto '" + p.nome + "' acabou de zerar no estoque!");
                 }
                 
-                db.fiados.push({ cliente: n, item: p.nome, valor: p.venda, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '', dataIso: new Date() });
+                db.fiados.push({ cliente: n, item: p.nome, valor: valorFinalFiado, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '', dataIso: new Date() });
                 save(); fecharModalVenda();
-                if(confirm("Fiado registrado! Enviar mensagem de cobrança ao cliente agora?")) cobrarFiado(n, p.nome, p.venda, dataP || '');
+                if(confirm("Fiado registrado! Enviar mensagem de cobrança ao cliente agora?")) cobrarFiado(n, p.nome, valorFinalFiado, dataP || '');
             }
         }
 
