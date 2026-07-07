@@ -347,7 +347,11 @@
                     if(l.t === 'v') {
                         vendasQtd++;
                         faturamentoBruto += l.v;
-                        custoDasMercadoriasVendidas += (l.custo || 0);
+                        
+                        // O lucro deduz o custo original e também qualquer desconto dado diretamente no ato da venda
+                        let desc = l.desconto || 0;
+                        custoDasMercadoriasVendidas += (l.custo || 0) + desc;
+                        
                         mercadoriasSairamQtd++;
                     }
                     if(l.t === 'd') {
@@ -520,27 +524,47 @@
             if(!produtoSelecionadoTemporario) return;
             
             const p = produtoSelecionadoTemporario.p;
-            let valorFinalVenda = p.venda;
             let nomeLog = p.nome;
 
+            // Solicitar Desconto independente da forma de pagamento
+            let descontoStr = prompt("Deseja aplicar algum desconto em R$ para essa venda? (Digite 0 ou deixe vazio se não houver):", "0");
+            let desconto = parseFloat(descontoStr?.replace(',', '.')) || 0;
+            if(isNaN(desconto) || desconto < 0) desconto = 0;
+
+            // Preço base inicial considerando o desconto aplicado
+            let valorBaseComDesconto = p.venda - desconto;
+            if (valorBaseComDesconto < 0) valorBaseComDesconto = 0;
+
+            let valorFinalVenda = valorBaseComDesconto;
+
             if(formaPagto === 'cartao') {
-                let novoValor = parseFloat(prompt("Digite o valor cobrado no cartão (com a taxa inclusa):", (p.venda * 1.05).toFixed(2))?.replace(',','.'));
-                if(!isNaN(novoValor) && novoValor > 0) {
-                    valorFinalVenda = novoValor;
-                    nomeLog = p.nome + " (Cartão)";
-                }
+                // Nova caixa solicitando explicitamente a taxa percentual da maquininha
+                let taxaStr = prompt("Digite a taxa da maquininha em porcentagem % (Exemplo: 5 para 5%):", "5");
+                let taxaPorcentagem = parseFloat(taxaStr?.replace(',', '.')) || 0;
+                if(isNaN(taxaPorcentagem) || taxaPorcentagem < 0) taxaPorcentagem = 0;
+
+                // Calcula o valor final aplicando a taxa sobre o preço com desconto
+                valorFinalVenda = valorBaseComDesconto * (1 + (taxaPorcentagem / 100));
+                nomeLog = p.nome + " (Cartão)";
             }
 
             const frete = parseFloat(prompt("Custo de frete/entrega para esta venda? (Deixe 0 se não houver)")?.replace(',','.'));
             
             p.qtd--;
-            db.logs.push({ t:'v', n: nomeLog, v: valorFinalVenda, custo: p.custo, dataIso: new Date() });
+            db.logs.push({ 
+                t: 'v', 
+                n: nomeLog, 
+                v: valorFinalVenda, 
+                custo: p.custo, 
+                desconto: desconto, 
+                dataIso: new Date() 
+            });
             
             if(frete > 0) {
                 db.logs.push({ t:'d', n: 'Entrega: ' + p.nome, v: frete, dataIso: new Date() });
             }
 
-            // RESTAURADO: Alerta ativo de estoque baixo / zerado!
+            // Alerta ativo de estoque baixo / zerado!
             if(p.qtd === 0) {
                 alert("⚠️ ATENÇÃO: O produto '" + p.nome + "' acabou de zerar no estoque!");
             }
