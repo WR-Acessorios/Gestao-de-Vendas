@@ -170,11 +170,6 @@
                 <div class="stat-card"><span class="stat-label">Vendas (Qtd)</span><span id="v-count" class="stat-value">0</span></div>
                 <div class="stat-card"><span class="stat-label">Estoque Itens</span><span id="p-count" class="stat-value">0</span></div>
             </div>
-            
-            <div class="ranking-container">
-                <h3 style="font-size: 14px; margin-bottom: 10px;">🏆 Mais Vendidos</h3>
-                <div id="top-produtos-list"></div>
-            </div>
 
             <div class="branding-section">
                 <div class="logo-placeholder">WR</div>
@@ -392,12 +387,6 @@
             db.produtos.forEach(p => totalItens += p.qtd);
             document.getElementById('p-count').innerText = totalItens;
 
-            const rankMap = {};
-            db.logs.filter(l => l.t === 'v').forEach(l => { rankMap[l.n] = (rankMap[l.n] || 0) + 1; });
-            const topProdutos = Object.entries(rankMap).sort((a,b) => b[1] - a[1]).slice(0,3);
-            const topList = document.getElementById('top-produtos-list');
-            topList.innerHTML = topProdutos.length ? topProdutos.map(([nome, qtd], i) => `<div><span class="rank-badge">${i+1}º LUGAR</span> <b>${nome}</b> (${qtd} un)</div>`).join("") : "Nenhuma venda ainda.";
-
             const listEstoque = document.getElementById('lista-estoque');
             if(listEstoque) {
                 listEstoque.innerHTML = "";
@@ -407,7 +396,7 @@
                     
                     const badgeEstoque = p.qtd <= 0 ? 
                         `<span class="alert-badge">⚠️ Sem Estoque!</span>` : 
-                        `<span class="margin-badge">Lucro unitário: ${fmt(lucroValor)} (${margin}%)</span>`;
+                        `<span class="margin-badge">Lucro unitário: ${fmt(lucroValor)} (${margem}%)</span>`;
 
                     listEstoque.innerHTML += `
                     <div class="item-card" style="${p.qtd <= 0 ? 'border-color: var(--danger); background: #fff5f5;' : ''}">
@@ -621,7 +610,7 @@
 
         function gerarReciboComPix(cliente, item, valor, chavePix) {
             let pixTexto = chavePix ? `%0A%0APara pagamento via Pix, utilize a chave abaixo:%0A🔑 *Pix:* ${chavePix}` : '';
-            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: ${item}%0AValor: R$ ${valor.toFixed(2)}${pixTexto}%0A---%0A_Obrigado pela preferência!_`;
+            const msg = `*WR ACESSÓRIOS MODEL*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: ${item}%0AValor: R$ ${valor.toFixed(2)}${pixTexto}%0A---%0A_Obrigado pela preferência!_`;
             window.open(`https://wa.me/?text=${msg}`, '_blank');
         }
 
