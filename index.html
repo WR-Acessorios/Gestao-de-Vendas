@@ -347,11 +347,8 @@
                     if(l.t === 'v') {
                         vendasQtd++;
                         faturamentoBruto += l.v;
-                        
-                        // O lucro deduz o custo original e também qualquer desconto dado diretamente no ato da venda
                         let desc = l.desconto || 0;
                         custoDasMercadoriasVendidas += (l.custo || 0) + desc;
-                        
                         mercadoriasSairamQtd++;
                     }
                     if(l.t === 'd') {
@@ -408,10 +405,9 @@
                     const lucroValor = p.venda - p.custo;
                     const margem = p.custo > 0 ? ((lucroValor / p.custo) * 100).toFixed(0) : 0;
                     
-                    // Alerta visual caso o estoque esteja zerado
                     const badgeEstoque = p.qtd <= 0 ? 
                         `<span class="alert-badge">⚠️ Sem Estoque!</span>` : 
-                        `<span class="margin-badge">Lucro unitário: ${fmt(lucroValor)} (${margem}%)</span>`;
+                        `<span class="margin-badge">Lucro unitário: ${fmt(lucroValor)} (${margin}%)</span>`;
 
                     listEstoque.innerHTML += `
                     <div class="item-card" style="${p.qtd <= 0 ? 'border-color: var(--danger); background: #fff5f5;' : ''}">
@@ -446,8 +442,9 @@
                         </div>
                         <div style="text-align:right">
                             <b>${fmt(f.valor)}</b><br>
-                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--info)" onclick="cobrarFiado('${f.cliente}', '${f.item}', ${f.valor}, '${f.dataPrometida || ''}')">WhatsApp</button>
-                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--primary)" onclick="baixarFiado(${i})">PAGO</button>
+                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--info);width:auto;display:inline-block;" onclick="cobrarFiado('${f.cliente}', '${f.item}', ${f.valor}, '${f.dataPrometida || ''}')">WhatsApp</button>
+                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--primary);width:auto;display:inline-block;" onclick="baixarFiado(${i})">PAGO</button>
+                            <button class="btn-confirm" style="padding:5px;font-size:10px;margin-top:5px;background:var(--danger);width:auto;display:inline-block;" onclick="excluirFiado(${i})">🗑️ Cancelar</button>
                         </div>
                     </div>`;
                 }).join("");
@@ -509,7 +506,6 @@
                 const dataP = prompt("Data combinada para pagamento? (Ex: 10/06, Sexta-feira. Se não quiser colocar, deixe em branco):");
                 p.qtd--;
                 
-                // Alerta caso o estoque fique zerado no fiado
                 if(p.qtd === 0) {
                     alert("⚠️ ATENÇÃO: O produto '" + p.nome + "' acabou de zerar no estoque!");
                 }
@@ -526,24 +522,20 @@
             const p = produtoSelecionadoTemporario.p;
             let nomeLog = p.nome;
 
-            // Solicitar Desconto independente da forma de pagamento
             let descontoStr = prompt("Deseja aplicar algum desconto em R$ para essa venda? (Digite 0 ou deixe vazio se não houver):", "0");
             let desconto = parseFloat(descontoStr?.replace(',', '.')) || 0;
             if(isNaN(desconto) || desconto < 0) desconto = 0;
 
-            // Preço base inicial considerando o desconto aplicado
             let valorBaseComDesconto = p.venda - desconto;
             if (valorBaseComDesconto < 0) valorBaseComDesconto = 0;
 
             let valorFinalVenda = valorBaseComDesconto;
 
             if(formaPagto === 'cartao') {
-                // Nova caixa solicitando explicitamente a taxa percentual da maquininha
                 let taxaStr = prompt("Digite a taxa da maquininha em porcentagem % (Exemplo: 5 para 5%):", "5");
                 let taxaPorcentagem = parseFloat(taxaStr?.replace(',', '.')) || 0;
                 if(isNaN(taxaPorcentagem) || taxaPorcentagem < 0) taxaPorcentagem = 0;
 
-                // Calcula o valor final aplicando a taxa sobre o preço com desconto
                 valorFinalVenda = valorBaseComDesconto * (1 + (taxaPorcentagem / 100));
                 nomeLog = p.nome + " (Cartão)";
             }
@@ -564,7 +556,6 @@
                 db.logs.push({ t:'d', n: 'Entrega: ' + p.nome, v: frete, dataIso: new Date() });
             }
 
-            // Alerta ativo de estoque baixo / zerado!
             if(p.qtd === 0) {
                 alert("⚠️ ATENÇÃO: O produto '" + p.nome + "' acabou de zerar no estoque!");
             }
@@ -601,6 +592,23 @@
         function removerLog(index) {
             if(confirm("Deseja remover este gasto?")) {
                 db.logs.splice(index, 1);
+                save();
+            }
+        }
+
+        function excluirFiado(index) {
+            const f = db.fiados[index];
+            if(confirm(`Deseja mesmo remover o fiado de ${f.cliente}?`)) {
+                const devolverEstoque = confirm(`Deseja devolver 1 unidade de '${f.item}' de volta ao estoque?`);
+                if(devolverEstoque) {
+                    const pIdx = db.produtos.findIndex(prod => prod.nome === f.item);
+                    if(pIdx > -1) {
+                        db.produtos[pIdx].qtd += 1;
+                    } else {
+                        alert("Produto original não foi localizado no catálogo para somar a quantidade, mas o fiado foi deletado.");
+                    }
+                }
+                db.fiados.splice(index, 1);
                 save();
             }
         }
