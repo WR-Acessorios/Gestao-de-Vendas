@@ -64,7 +64,6 @@
 
         .margin-badge { background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; margin-top: 4px; }
         .alert-badge { background: #fee2e2; color: #ef4444; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; margin-top: 4px; }
-        .rank-badge { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; margin-bottom: 5px; display: inline-block; }
 
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; padding: 10px 0 25px 0; z-index: 100; }
         .nav-item { background: none; border: none; color: #94a3b8; font-size: 9px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 700; }
@@ -83,15 +82,11 @@
             align-items: center; text-align: left; cursor: pointer;
         }
 
-        .ranking-container { background: #fff; border-radius: 20px; padding: 15px; border: 1px solid var(--border); margin-top: 10px; }
-        
-        /* Estilos do Relatório */
         .report-select-container { background: white; padding: 15px; border-radius: 18px; border: 1px solid var(--border); margin-bottom: 20px; }
         .report-card { background: white; border-radius: 20px; padding: 20px; border: 1px solid var(--border); margin-bottom: 15px; }
         .report-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--border); font-size: 14px; }
         .report-row:last-child { border-bottom: none; font-weight: bold; font-size: 16px; padding-top: 15px; }
 
-        /* Estilos do Novo Modal de Pagamento baseado na imagem_2.png */
         .pay-option-btn {
             width: 100%; border: 1px solid var(--border); border-radius: 20px; padding: 15px;
             background: white; margin-bottom: 12px; display: flex; align-items: center; gap: 15px;
@@ -503,7 +498,6 @@
                 let desconto = parseFloat(descontoStr?.replace(',', '.')) || 0;
                 if(isNaN(desconto) || desconto < 0) desconto = 0;
                 
-                let valorFinalFiado = p.venda - discount = desconto;
                 let valorFinalFiadoCalculado = p.venda - desconto;
                 if (valorFinalFiadoCalculado < 0) valorFinalFiadoCalculado = 0;
 
@@ -625,7 +619,7 @@
 
         function gerarReciboComPix(cliente, item, valor, chavePix) {
             let pixTexto = chavePix ? `%0A%0APara pagamento via Pix, utilize a chave abaixo:%0A🔑 *Pix:* ${chavePix}` : '';
-            const msg = `*WR ACESSÓRIOS MODEL*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: ${item}%0AValor: R$ ${valor.toFixed(2)}${pixTexto}%0A---%0A_Obrigado pela preferência!_`;
+            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: ${item}%0AValor: R$ ${valor.toFixed(2)}${pixTexto}%0A---%0A_Obrigado pela preferência!_`;
             window.open(`https://wa.me/?text=${msg}`, '_blank');
         }
 
@@ -690,15 +684,18 @@
 
         function novaDespesa() {
             const n = prompt("Descrição do gasto (Ex: Almoço, Passagem):");
-            const v = parseFloat(prompt("Valor R$:")?.replace(',','.'));
-            if(n && v) { db.logs.push({ t:'d', n: n, v: v, dataIso: new Date() }); save(); }
+            if (!n) return;
+            const vStr = prompt("Valor R$:");
+            const v = parseFloat(vStr?.replace(',','.'));
+            if(n && !isNaN(v) && v > 0) { db.logs.push({ t:'d', n: n, v: v, dataIso: new Date() }); save(); }
         }
 
         function injetarCapital() {
             const n = prompt("Origem do Capital / Descrição (Ex: Investimento Próprio, Adicional de Caixa):");
-            const v = parseFloat(prompt("Valor injetado R$:")?.replace(',','.'));
-            if(n && v) { 
-                // Injetar capital entra como um gasto negativo (diminui as despesas globais e soma no caixa)
+            if (!n) return;
+            const vStr = prompt("Valor injetado R$:");
+            const v = parseFloat(vStr?.replace(',','.'));
+            if(n && !isNaN(v) && v > 0) { 
                 db.logs.push({ t:'d', n: 'Capital Injetado: ' + n, v: -v, dataIso: new Date() }); 
                 save(); 
             }
