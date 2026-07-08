@@ -202,6 +202,7 @@
             <div class="stat-card"><span class="stat-label">Custo do Estoque</span><span id="invest-total" class="stat-value">R$ 0,00</span></div>
             <div class="stat-card"><span class="stat-label">Potencial Venda</span><span id="venda-estoque-total" class="stat-value" style="color:var(--primary)">R$ 0,00</span></div>
         </div>
+        <button class="btn-venda" style="background:var(--info); color:white; margin-bottom:10px" onclick="injetarCapital()">+ Injetar Capital (Caixa)</button>
         <button class="btn-venda" style="background:var(--danger); color:white" onclick="novaDespesa()">+ Lançar Gasto Extra</button>
         <div id="lista-desp"></div>
     </div>
@@ -448,7 +449,12 @@
             const listDesp = document.getElementById('lista-desp');
             if(listDesp) {
                 listDesp.innerHTML = db.logs.map((l, i) => ({...l, originalIdx: i}))
-                    .filter(l => l.t === 'd').reverse().map(l => `<div class="item-card"><div><b>${l.n}</b><br><small>${new Date(l.dataIso).toLocaleDateString()}</small></div><div style="text-align:right"><b style="color:var(--danger)">- ${fmt(l.v)}</b><br><button onclick="removerLog(${l.originalIdx})" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Remover</button></div></div>`).join("");
+                    .filter(l => l.t === 'd').reverse().map(l => {
+                        const corTexto = l.v < 0 ? 'var(--primary)' : 'var(--danger)';
+                        const sinal = l.v < 0 ? '+ ' : '- ';
+                        const valorAbsoluto = Math.abs(l.v);
+                        return `<div class="item-card"><div><b>${l.n}</b><br><small>${new Date(l.dataIso).toLocaleDateString()}</small></div><div style="text-align:right"><b style="color:${corTexto}">${sinal}${fmt(valorAbsoluto)}</b><br><button onclick="removerLog(${l.originalIdx})" style="border:none; background:none; color:var(--danger); font-size:11px; cursor:pointer">🗑️ Remover</button></div></div>`;
+                    }).join("");
             }
 
             if (document.getElementById('relatorios-page').classList.contains('active')) {
@@ -497,8 +503,9 @@
                 let desconto = parseFloat(descontoStr?.replace(',', '.')) || 0;
                 if(isNaN(desconto) || desconto < 0) desconto = 0;
                 
-                let valorFinalFiado = p.venda - desconto;
-                if (valorFinalFiado < 0) valorFinalFiado = 0;
+                let valorFinalFiado = p.venda - discount = desconto;
+                let valorFinalFiadoCalculado = p.venda - desconto;
+                if (valorFinalFiadoCalculado < 0) valorFinalFiadoCalculado = 0;
 
                 const dataP = prompt("Data combinada para pagamento? (Ex: 10/06, Sexta-feira. Se não quiser colocar, deixe em branco):");
                 p.qtd--;
@@ -507,9 +514,9 @@
                     alert("⚠️ ATENÇÃO: O produto '" + p.nome + "' acabou de zerar no estoque!");
                 }
                 
-                db.fiados.push({ cliente: n, item: p.nome, valor: valorFinalFiado, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '', dataIso: new Date() });
+                db.fiados.push({ cliente: n, item: p.nome, valor: valorFinalFiadoCalculado, custo: p.custo, dataPagto: 'Pend', dataPrometida: dataP || '', dataIso: new Date() });
                 save(); fecharModalVenda();
-                if(confirm("Fiado registrado! Enviar mensagem de cobrança ao cliente agora?")) cobrarFiado(n, p.nome, valorFinalFiado, dataP || '');
+                if(confirm("Fiado registrado! Enviar mensagem de cobrança ao cliente agora?")) cobrarFiado(n, p.nome, valorFinalFiadoCalculado, dataP || '');
             }
         }
 
@@ -587,7 +594,7 @@
         }
 
         function removerLog(index) {
-            if(confirm("Deseja remover este gasto?")) {
+            if(confirm("Deseja remover este registro?")) {
                 db.logs.splice(index, 1);
                 save();
             }
@@ -685,6 +692,16 @@
             const n = prompt("Descrição do gasto (Ex: Almoço, Passagem):");
             const v = parseFloat(prompt("Valor R$:")?.replace(',','.'));
             if(n && v) { db.logs.push({ t:'d', n: n, v: v, dataIso: new Date() }); save(); }
+        }
+
+        function injetarCapital() {
+            const n = prompt("Origem do Capital / Descrição (Ex: Investimento Próprio, Adicional de Caixa):");
+            const v = parseFloat(prompt("Valor injetado R$:")?.replace(',','.'));
+            if(n && v) { 
+                // Injetar capital entra como um gasto negativo (diminui as despesas globais e soma no caixa)
+                db.logs.push({ t:'d', n: 'Capital Injetado: ' + n, v: -v, dataIso: new Date() }); 
+                save(); 
+            }
         }
 
         function exportarBackup() {
