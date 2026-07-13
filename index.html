@@ -678,8 +678,27 @@
 
         function baixarFiado(i) {
             const f = db.fiados[i];
-            db.logs.push({ t:'v', n: 'Fiado Pago: ' + f.cliente + ' (' + f.item + ')', v: f.valor, custo: f.custo, dataIso: new Date() });
-            db.fiados.splice(i, 1); save();
+            
+            // Pergunta se deseja enviar mensagem de confirmação do pagamento
+            const enviarComprovante = confirm(`Deseja enviar o comprovante de pagamento para ${f.cliente} no WhatsApp?`);
+            
+            if(enviarComprovante) {
+                const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Comprovante de Pagamento*%0A%0AOlá, ${f.cliente}!%0A%0AConfirmamos o recebimento do seu pagamento no valor de *R$ ${f.valor.toFixed(2)}* referente ao item:%0A📦 *${f.item}*%0A%0ASeu fiado foi baixado com sucesso! Muito obrigado pela preferência! 🤝`;
+                window.open(`https://wa.me/?text=${msg}`, '_blank');
+            }
+
+            // Registra a venda no histórico financeiro
+            db.logs.push({ 
+                t:'v', 
+                n: 'Fiado Pago: ' + f.cliente + ' (' + f.item + ')', 
+                v: f.valor, 
+                custo: f.custo, 
+                dataIso: new Date() 
+            });
+            
+            // Remove o fiado da lista e salva o banco
+            db.fiados.splice(i, 1); 
+            save();
         }
 
         function novaDespesa() {
