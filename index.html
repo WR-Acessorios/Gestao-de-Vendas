@@ -619,7 +619,7 @@
 
         function gerarReciboComPix(cliente, item, valor, chavePix) {
             let pixTexto = chavePix ? `%0A%0APara pagamento via Pix, utilize a chave abaixo:%0A🔑 *Pix:* ${chavePix}` : '';
-            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: ${item}%0AValor: R$ ${valor.toFixed(2)}${pixTexto}%0A---%0A_Obrigado pela preferência!_`;
+            const msg = `*WR ACESSÓRIOS MOBILE*%0A---%0A*Recibo de Compra*%0A%0AOlá, ${cliente}!%0AItem: ${item}%0AValor: R$ ${valor.toFixed(2)}${pixTexto}%0A%0ASiga o perfil da loja para mais novidades:%0A📸 *Instagram:* @wr_acessoriosmobile%0A🔗 https://www.instagram.com/wr_acessoriosmobile?igsh=czJoOW02bnBvZHQw%26utm_source=qr%0A---%0A_Obrigado pela preferência!_`;
             window.open(`https://wa.me/?text=${msg}`, '_blank');
         }
 
